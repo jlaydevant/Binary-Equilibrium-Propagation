@@ -106,7 +106,7 @@ The package requirements are listed in the file 'requirements.txt'.
 
 	
 	
-## IV - Details about Network_x.py file:
+## IV - Details about Network.py file:
 Each file contains a class of a network. Each class inherits from a nn.Module.
 
 Each network has the following built-in functions:
@@ -121,11 +121,11 @@ iv) computeGradient: compute the instantaneous gradient for each parameter and a
 
 v) updateWeights: update all parameters in the network according to the gradient computed in computeGradient - binary optimization for the weights & SGD for the biases
 
-vi) initHidden: init the state of network before each free phase to 1
+vi) initHidden: init the state of network before each free phase
     
     
 
-## V - Details about Tools_x.py file:
+## V - Details about Tools.py file:
 Each file contains the same functions but adapted for each architecture.
 
 i) train_bin: train the network over the whole training dataset once. Run the free and nudge phase and update the weights. Track the number of changes in the weights.
@@ -141,7 +141,7 @@ v) createPath: create the path and the folder where the training data will be st
 vi) saveHyperparameters: create a .txt file with all hyperparameters in the parser in the folder 'S-X'.
 
 
-## VI - Binary Synapses - Full-precision activations: Commands to be run in the terminal to reproduce the results of the paper (Section 3):
+## VI - Binary Synapses & Full-precision activations: Commands to be run in the terminal to reproduce the results of the paper (Section 3):
 
 
 * Fully connected architecture:
@@ -190,7 +190,7 @@ Learnt scaling factors:
 > python main.py --device 0 --optim ep --archi conv --binary_settings bin_W --layersList 10 --convList 256 256 128 64 3 --padding 2 --kernelSize 5 --Fpool 2 --activationFun hardsigm --T 150 --Kmax 10 --beta 0.3 --random_beta 1 --classi_gamma 2e-7 --conv_gamma 2e-7 2e-7 2e-7 2e-7 --classi_threshold 1e-8 --conv_threshold 1e-8 1e-8 1e-8 1e-8 --dataset cifar10 --lrBias 0.025 0.05 0.1 0.2 0.4 --batchSize 64 --test_batchSize 512 --epochs 500 --learnAlpha 1 --learnAlpha 1 --lrAlpha 1e-4 1e-2 1e-2 1e-2 1e-2 --decayLrAlpha 10 --epochDecayLrAlpha 10
 
 
-## VI - Binary Synapses - Binary activations: Commands to be run in the terminal to reproduce the results of the paper (Section 4):
+## VI - Binary Synapses & Binary activations: Commands to be run in the terminal to reproduce the results of the paper (Section 4):
 
 
 * Fully connected architecture:
