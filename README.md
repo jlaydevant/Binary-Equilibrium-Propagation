@@ -12,17 +12,13 @@ The package requirements are listed in the file 'requirements.txt'.
 
 #### - The repo contains the following files:
 
-	i) main.py: file that centralise the argument of the parser and execute the code. Loads differentially the following files depending on the architecture (fc or conv).
+	i) main.py: file that centralise the argument of the parser and execute the code. Loads differentially the following files depending on the architecture (fc or conv) and the settings of EP: (binary synapses & full-precision activations) or (binary synapses & binary activations).
 	
-	ii) Network_fc.py: file that builds the class of a fully connected network and all its functions.
+	ii) Network.py: file that builds the class of network and all its functions.
 	
-	iii) Tools_fc.py: file that train the fc-network, test it and save all data & parameters in a dedicated folder.
+	iii) Tools.py: file that train the network, test it and save all data & parameters in a dedicated folder.
 	
-	iv) Network_conv.py: file that builds the class of a convolutionnal network and all its functions.
-	
-	v) Tools_conv.py: file that train the conv-network, test it and save all data & parameters in a dedicated folder.
-	
-	vi) plotFunctions.py: file used to plot the training curves as they appear in the paper. It is copied in each new folder with new parameters.
+	iv) plotFunctions.py: file used to plot the training curves as they appear in the paper. It is copied in each new folder with new parameters.
 
 
 ## III - Run main.py file
@@ -35,7 +31,7 @@ The package requirements are listed in the file 'requirements.txt'.
 	
 	iii) Loads the dataset depending on the dataset specified by the command line.
 	
-	iv) Builds the network with Network_fc.py or Network_conv.py.
+	iv) Builds the network with Network.py.
 	
 	v) Trains the network and tests it over epochs and store training data in the dedicated files.
 	
