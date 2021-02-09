@@ -1,12 +1,15 @@
 # Training Dynamical Binary Neural Networks with Equilibrium Propagation
+This repository contains the code to reproduce the results of the paper "Training Dynamical Binary Neural Network with Equilibrium Propagation".
 
-Here are listed description of the code uploaded and the commands to be run to reproduce the results shown in the paper - for the binary-weights section only.
+Here are listed description of the code uploaded and the commands to be run to reproduce the results shown in the paper. Depending on the commands used in the parser we can train networks with binary weights and which have a full-precision or binary activation. 
 
 ## I - Package requirements
 
 Our code is compatible with Python 3.6 and 3.7.
 
 The package requirements are listed in the file 'requirements.txt'.
+
++ add commands for virtual env.
 
 ## II - Files
 
