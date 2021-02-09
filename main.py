@@ -64,11 +64,6 @@ parser.add_argument(
     default="train_ep",
     help='Optimiser to use: EP of BPTT (default: ep, others: bptt)')
 parser.add_argument(
-    '--binary_setting',
-    type=str,
-    default="bin_W",
-    help='Binary settings for EP: binary synapses only or binary synapses & activation (default: bin_W, others: bin_W_N)')
-parser.add_argument(
     '--activationFun',
     type=str,
     default="hardsigm",
@@ -85,6 +80,11 @@ parser.add_argument(
     default=10,
     metavar='Kmax',
     help='Number of time steps in the backward pass (default: 10)')
+parser.add_argument(
+    '--gamma_neur',
+    type=float,
+    default=5e-1,
+    help='gamma to filter out pre-activations of neurons for relaxation')
 parser.add_argument(
     '--beta',
     type=float,
@@ -137,6 +137,16 @@ parser.add_argument(
     type=float,
     default=[5e-8, 5e-8],
     help='Thresholds used for the conv partd of the conv archi') 
+parser.add_argument(
+    '--rho_threshold',
+    type=float,
+    default=0.5,
+    help='Offset of the activation function - 0.5 mean rho(x-0.5), 0 for rho(x)')
+parser.add_argument(
+    '--expand_output',
+    type=int,
+    default=1,
+    help='Quantity by how much we enlarge the output layer (default=1)')
 #Training settings
 parser.add_argument(
     '--dataset',
@@ -180,23 +190,14 @@ parser.add_argument(
 parser.add_argument(
     '--decayLrAlpha',
     type=float,
-    default=2.0,
+    default=1.0,
     help='Quantity by how much we decay the learning rate for alpha')
 parser.add_argument(
     '--epochDecayLrAlpha',
     type=int,
-    default=20,
+    default=1000,
     help='Epoch to decay learning rate for alpha')
 args = parser.parse_args()
-
-# 
-# if args.archi == "fc":
-#     from Tools_fc import *
-#     from Network_fc import *
-# 
-# elif args.archi == "conv":
-#     from Tools_conv import *
-#     from Network_conv import *
 
 
 
@@ -215,7 +216,7 @@ class ReshapeTransformTarget:
     def __call__(self, target):
         target=torch.tensor(target).unsqueeze(0).unsqueeze(1)
         target_onehot = torch.zeros((1,self.number_classes))
-        return target_onehot.scatter_(1, target, 1).squeeze(0)
+        return target_onehot.scatter_(1, target, 1).repeat_interleave(args.expand_output).squeeze(0)
 
 if args.archi == "fc":    
     transforms=[torchvision.transforms.ToTensor(),ReshapeTransform((-1,))]
@@ -266,24 +267,18 @@ elif args.archi == "conv":
                             target_transform=ReshapeTransformTarget(10)),
                             batch_size = args.test_batchSize, shuffle=True)
 
-
-if  args.activationFun == 'sigm':
-    def rho(x):
-        return 1/(1+torch.exp(-(x)))
-    def rhop(x):
-        return torch.mul(rho(x), 1 -rho(x))
-
-elif args.activationFun == 'hardsigm':
+if args.activationFun == 'hardsigm':
     def rho(x):
         return x.clamp(min = 0).clamp(max = 1)
     def rhop(x):
         return (x >= 0) & (x <= 1)
 
-elif args.activationFun == 'tanh':
+elif args.activationFun == 'heaviside':
     def rho(x):
-        return torch.tanh(x)
+        return (((torch.sign(x)+1)/2)*(x != 0).float() + (x == 0).float()).float()
     def rhop(x):
-        return 1 - torch.tanh(x)**2
+        return ((x >= -0.5) & (x <= 0.5)).float()
+
         
 
 if __name__ == '__main__':
@@ -294,11 +289,8 @@ if __name__ == '__main__':
     else:
         prefix = '/'
 
-    print("Training the model")
-
+    #'''Train a fully-connected architecture - binary and full-precision or binary activation '''
     if args.archi == 'fc':
-        
-        #Create the network corresponding to the settings of EP entered
         if args.binary_settings == "bin_W":
             net = Network_fc_bin_W(args)
         elif args.binary_settings == "bin_W_N":
@@ -307,39 +299,41 @@ if __name__ == '__main__':
         if net.cuda:
             net.to(net.device)
             
-        # Create a folder to store results of the simulations
         BASE_PATH, name = createPath(args)
         saveHyperparameters(args, net, BASE_PATH)
         DATAFRAME = initDataframe_fc(BASE_PATH, args, net)
     
-        train_error_list, test_error_list = [], []
+        ave_train_error_list, ave_test_error_list = [], []
+        single_train_error_list, single_test_error_list = [], []
         train_loss_list, test_loss_list = [], []
 
         for epoch in tqdm(range(args.epochs)):
             net.epoch = epoch+1
-            train_error, train_loss, nb_changes_epoch = train_fc(net, args, train_loader, epoch, optim = args.optim)
-            test_error, test_loss = test_fc(net, args, test_loader)
+            ave_train_error, single_train_error, train_loss, nb_changes_epoch = train_fc(net, args, train_loader, epoch, optim = args.optim)
+            ave_test_error, single_test_error, test_loss = test_fc(net, args, test_loader)
     
-            train_error_list.append(train_error.cpu().item())
-            test_error_list.append(test_error.cpu().item())
+            ave_train_error_list.append(ave_train_error.cpu().item())
+            ave_test_error_list.append(ave_test_error.cpu().item())
+            
+            single_train_error_list.append(single_train_error.cpu().item())
+            single_test_error_list.append(single_test_error.cpu().item())
     
             train_loss_list.append(train_loss.cpu().item())
             test_loss_list.append(test_loss.cpu().item())
     
-            DATAFRAME = updateDataframe_fc(BASE_PATH, args, DATAFRAME, net, train_error_list, test_error_list, train_loss_list, test_loss_list, nb_changes_epoch)
-            # torch.save(net.state_dict(), BASE_PATH + prefix + 'model_state_dict.pt')
+            DATAFRAME = updateDataframe_fc(BASE_PATH, args, DATAFRAME, net, ave_train_error_list, ave_test_error_list, single_train_error_list, single_test_error_list, train_loss_list, test_loss_list, nb_changes_epoch)
+
             torch.save({
                         'epoch': epoch,
                         'model_state_dict': net.state_dict(),
                         'train_loss': train_loss.item(),
-                        'train_error': train_error,
+                        'train_error': ave_train_error,
                         'test_loss': test_loss.item(),
-                        'test_error': test_error
+                        'test_error': ave_test_error
                         },  BASE_PATH + prefix + 'checkpoint.pt')
-                        
+         
+    #'''Train a convolutionnal architecture - binary and full-precision or binary activation '''
     elif args.archi == 'conv':
-        
-        #Create the network corresponding to the settings of EP entered
         if args.binary_settings == "bin_W":
             net = Network_conv_bin_W(args)
         elif args.binary_settings == "bin_W_N":
@@ -348,21 +342,24 @@ if __name__ == '__main__':
         if net.cuda:
             net.to(net.device)
             
-        # Create a folder to store results of the simulations
         BASE_PATH, name = createPath(args)
         saveHyperparameters(args, net, BASE_PATH)
         DATAFRAME = initDataframe_conv(BASE_PATH, args, net)
     
-        train_error_list, test_error_list = [], []
+        ave_train_error_list, ave_test_error_list = [], []
+        single_train_error_list, single_test_error_list = [], []
         train_loss_list, test_loss_list = [], []
 
         for epoch in tqdm(range(args.epochs)):
             net.epoch = epoch+1
-            train_error, train_loss, nb_changes_epoch_fc, nb_changes_epoch_conv = train_conv(net, args, train_loader, epoch, optim = args.optim)
-            test_error, test_loss = test_conv(net, args, test_loader)
+            ave_train_error, single_train_error, train_loss, nb_changes_epoch_fc, nb_changes_epoch_conv = train_conv(net, args, train_loader, epoch, optim = args.optim)
+            ave_test_error, single_test_error, test_loss = test_conv(net, args, test_loader)
     
-            train_error_list.append(train_error.cpu().item())
-            test_error_list.append(test_error.cpu().item())
+            ave_train_error_list.append(ave_train_error.cpu().item())
+            ave_test_error_list.append(ave_test_error.cpu().item())
+            
+            single_train_error_list.append(single_train_error.cpu().item())
+            single_test_error_list.append(single_test_error.cpu().item())
     
             train_loss_list.append(train_loss.cpu().item())
             test_loss_list.append(test_loss.cpu().item())
@@ -373,9 +370,9 @@ if __name__ == '__main__':
                         'epoch': epoch,
                         'model_state_dict': net.state_dict(),
                         'train_loss': train_loss.item(),
-                        'train_error': train_error,
+                        'train_error': ave_train_error,
                         'test_loss': test_loss.item(),
-                        'test_error': test_error
+                        'test_error': ave_test_error
                         },  BASE_PATH + prefix + 'checkpoint.pt')
 
 

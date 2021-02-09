@@ -19,7 +19,7 @@ def train_fc(net, args, train_loader, epoch, optim = 'ep'):
 
     net.train()
     criterion = nn.MSELoss(reduction = 'sum')
-    falsePred, loss_loc = 0, 0
+    ave_falsePred, single_falsePred, loss_loc = 0, 0, 0
     nb_changes = [0. for k in range(len(args.layersList)-1)]
 
     for batch_idx, (data, targets) in enumerate(tqdm(train_loader)):
@@ -35,7 +35,7 @@ def train_fc(net, args, train_loader, epoch, optim = 'ep'):
                 s[i] = s[i].to(net.device)
 
         #free phase
-        s = net.forward(s)
+        s = net.forward(args, s)
         seq = s.copy()
 
         #loss
@@ -43,7 +43,7 @@ def train_fc(net, args, train_loader, epoch, optim = 'ep'):
         loss_loc += loss                                   # cumulative loss for the epoch
 
         #nudged phase
-        s = net.forward(s, target = targets, beta = net.beta)
+        s = net.forward(args, s, target = targets, beta = net.beta)
 
         #update and track the weights of the network
         nb_changes_loc = net.updateWeight(epoch, s, seq, args)
@@ -51,19 +51,37 @@ def train_fc(net, args, train_loader, epoch, optim = 'ep'):
             nb_changes[k] = nb_changes[k] + nb_changes_loc[k]
 
         #compute error
-        falsePred += (torch.argmax(targets, dim = 1) != torch.argmax(seq[0], dim = 1)).int().sum(dim=0)
+        if args.binary_settings == "bin_W":
+            ave_falsePred += (torch.argmax(targets, dim = 1) != torch.argmax(seq[0], dim = 1)).int().sum(dim=0)
+            
+        elif args.binary_settings == "bin_W_N":
+            #compute averaged error over the sub-classes
+            pred_ave = torch.stack([item.sum(1) for item in seq[0].split(args.expand_output, dim = 1)], 1)/args.expand_output
+            targets_red = torch.stack([item.sum(1) for item in targets.split(args.expand_output, dim = 1)], 1)/args.expand_output
+            ave_falsePred += (torch.argmax(targets_red, dim = 1) != torch.argmax(pred_ave, dim = 1)).int().sum(dim=0)
+    
+            #compute error computed on the first neuron of each sub class
+            pred_single = torch.stack([item[:,0] for item in seq[0].split(args.expand_output, dim = 1)], 1)
+            single_falsePred += (torch.argmax(targets_red, dim = 1) != torch.argmax(pred_single, dim = 1)).int().sum(dim=0)
 
-    train_error = (falsePred / float(len(train_loader.dataset))) * 100
+    if args.binary_settings == "bin_W":
+        ave_train_error = (ave_falsePred / float(len(train_loader.dataset))) * 100
+        single_train_error = ave_train_error
+        
+    elif args.binary_settings == "bin_W_N":
+        ave_train_error = (ave_falsePred.float() / float(len(train_loader.dataset))) * 100
+        single_train_error = (single_falsePred.float() / float(len(train_loader.dataset))) * 100
+        
     total_loss = loss_loc/ len(train_loader.dataset)
     
-    return train_error, total_loss, nb_changes
+    return ave_train_error, single_train_error, total_loss, nb_changes
 
 
 def test_fc(net, args, test_loader):
 
     net.eval()
     criterion = nn.MSELoss(reduction = 'sum')
-    falsePred, loss_loc = 0, 0
+    ave_falsePred, single_falsePred, loss_loc = 0, 0, 0
 
     for batch_idx, (data, targets) in enumerate(test_loader):
 
@@ -75,18 +93,36 @@ def test_fc(net, args, test_loader):
                 s[i] = s[i].to(net.device)
 
         #free phase
-        s = net.forward(s)
+        s = net.forward(args, s)
 
         #loss
         loss_loc += (1/(2*s[0].size(0)))*criterion(s[0], targets)
 
         #compute error
-        falsePred += (torch.argmax(targets, dim = 1) != torch.argmax(s[0], dim = 1)).int().sum(dim=0)
-
-    test_error = (falsePred / float(len(test_loader.dataset))) * 100
+        if args.binary_settings == "bin_W":
+            ave_falsePred += (torch.argmax(targets, dim = 1) != torch.argmax(s[0], dim = 1)).int().sum(dim=0)
+            
+        elif args.binary_settings == "bin_W_N":
+            #compute averaged error over the sub_classses
+            pred_ave = torch.stack([item.sum(1) for item in s[0].split(args.expand_output, dim = 1)], 1)/args.expand_output
+            targets_red = torch.stack([item.sum(1) for item in targets.split(args.expand_output, dim = 1)], 1)/args.expand_output
+            ave_falsePred += (torch.argmax(targets_red, dim = 1) != torch.argmax(pred_ave, dim = 1)).int().sum(dim=0)
+    
+            #compute error computed on the first neuron of each sub class
+            pred_single = torch.stack([item[:,0] for item in s[0].split(args.expand_output, dim = 1)], 1)
+            single_falsePred += (torch.argmax(targets_red, dim = 1) != torch.argmax(pred_single, dim = 1)).int().sum(dim=0)
+            
+    if args.binary_settings == "bin_W":
+        ave_test_error = (ave_falsePred / float(len(test_loader.dataset))) * 100
+        single_test_error = ave_test_error
+        
+    elif args.binary_settings == "bin_W_N":
+        ave_test_error = (ave_falsePred.float() / float(len(test_loader.dataset))) * 100
+        single_test_error = (single_falsePred.float() / float(len(test_loader.dataset))) * 100
+        
     test_loss = loss_loc/ len(test_loader.dataset)
 
-    return test_error, test_loss
+    return ave_test_error, single_test_error, test_loss
 
 
 def initDataframe_fc(path, args, net, dataframe_to_init = 'results.csv'):
@@ -99,7 +135,7 @@ def initDataframe_fc(path, args, net, dataframe_to_init = 'results.csv'):
     if os.path.isfile(path + dataframe_to_init):
         dataframe = pd.read_csv(path + dataframe_to_init, sep = ',', index_col = 0)
     else:
-        columns_header = ['Train_Error','Test_Error','Train_Loss','Test_Loss']
+        columns_header = ['Ave_Train_Error','Ave_Test_Error','Single_Train_Error','Single_Test_Error','Train_Loss','Test_Loss']
 
         for k in range(len(args.layersList) - 1):
             columns_header.append('Nb_Change_Weights_'+str(k))
@@ -118,14 +154,14 @@ def initDataframe_fc(path, args, net, dataframe_to_init = 'results.csv'):
     return dataframe
 
 
-def updateDataframe_fc(BASE_PATH, args, dataframe, net, train_error_list, test_error_list, train_loss_list, test_loss_list, nb_changes_epoch):
+def updateDataframe_fc(BASE_PATH, args, dataframe, net, ave_train_error, ave_test_error, single_train_error, single_test_error, train_loss, test_loss, nb_changes_epoch):
 
     if os.name != 'posix':
         prefix = '\\'
     else:
         prefix = '/'
         
-    data = [train_error_list[-1], test_error_list[-1], train_loss_list[-1], test_loss_list[-1]]
+    data = [ave_train_error[-1], ave_test_error[-1], single_train_error[-1], single_test_error[-1], train_loss[-1], test_loss[-1]]
     for k in range(len(args.layersList) - 1):
         N_weights = net.W[k].weight.numel()
         data.append(log(nb_changes_epoch[k]/N_weights+1e-9))
@@ -170,7 +206,7 @@ def train_conv(net, args, train_loader, epoch, optim = 'ep'):
                 s[i] = s[i].to(net.device)
 
         #free phase
-        s, inds = net.forward(s, data, inds)
+        s, inds = net.forward(args, s, data, inds)
 
         seq = [item.clone() for item in s]
         indseq = [item if item is not None else None for item in inds ]
@@ -180,7 +216,7 @@ def train_conv(net, args, train_loader, epoch, optim = 'ep'):
         loss_loc += loss
 
         #nudged phase
-        s, inds = net.forward(s, data, inds, beta = net.beta, target = targets, optim = optim)
+        s, inds = net.forward(args, s, data, inds, beta = net.beta, target = targets, optim = optim)
 
         #update and track the weights of the network
         nb_changes_fc_loc, nb_changes_conv_loc = net.updateWeight(epoch, s, seq, inds, indseq, args, data, optim)
@@ -189,19 +225,37 @@ def train_conv(net, args, train_loader, epoch, optim = 'ep'):
         nb_changes_conv = [x1+x2 for (x1, x2) in zip(nb_changes_conv, nb_changes_conv_loc)]
 
         #compute error
-        falsePred += (torch.argmax(targets, dim = 1) != torch.argmax(seq[0], dim = 1)).int().sum(dim=0)
+        if args.binary_settings == "bin_W":
+            falsePred += (torch.argmax(targets, dim = 1) != torch.argmax(seq[0], dim = 1)).int().sum(dim=0)
+            
+        elif args.binary_settings == "bin_W_N":
+            #compute averaged error over the sub-classes
+            pred_ave = torch.stack([item.sum(1) for item in seq[0].split(args.expand_output, dim = 1)], 1)/args.expand_output
+            targets_red = torch.stack([item.sum(1) for item in targets.split(args.expand_output, dim = 1)], 1)/args.expand_output
+            ave_falsePred += (torch.argmax(targets_red, dim = 1) != torch.argmax(pred_ave, dim = 1)).int().sum(dim=0)
+    
+            #compute error computed on the first neuron of each sub class
+            pred_single = torch.stack([item[:,0] for item in seq[0].split(args.expand_output, dim = 1)], 1)
+            single_falsePred += (torch.argmax(targets_red, dim = 1) != torch.argmax(pred_single, dim = 1)).int().sum(dim=0)
 
-    train_error = (falsePred / float(len(train_loader.dataset))) * 100
-    train_loss = loss_loc/ float(len(train_loader.dataset))
-
-    return train_error, train_loss, nb_changes_fc, nb_changes_conv
+    if args.binary_settings == "bin_W":
+        ave_train_error = (falsePred / float(len(train_loader.dataset))) * 100
+        single_train_error = ave_train_error
+        
+    elif args.binary_settings == "bin_W_N":
+        ave_train_error = (ave_falsePred.float() / float(len(train_loader.dataset))) * 100
+        single_train_error = (single_falsePred.float() / float(len(train_loader.dataset))) * 100
+        
+    total_loss = loss_loc/ len(train_loader.dataset)
+    
+    return ave_train_error, single_train_error, total_loss, nb_changes_fc, nb_changes_conv
 
 
 def test_bin_conv(net, args, test_loader):
 
     net.eval()
     criterion = nn.MSELoss(reduction = 'sum')
-    falsePred, loss_loc = 0, 0
+    ave_falsePred, single_falsePred, loss_loc = 0, 0, 0
 
     with torch.no_grad():
         for batch_idx, (data, targets) in enumerate(test_loader):
@@ -220,13 +274,31 @@ def test_bin_conv(net, args, test_loader):
             loss = (1/(2*s[0].size(0)))*criterion(s[0], targets)
             loss_loc += loss
 
-            #compute error
-            falsePred += (torch.argmax(targets, dim = 1) != torch.argmax(s[0], dim = 1)).int().sum(dim=0)
+        #compute error
+        if args.binary_settings == "bin_W":
+            ave_falsePred += (torch.argmax(targets, dim = 1) != torch.argmax(s[0], dim = 1)).int().sum(dim=0)
+            
+        elif args.binary_settings == "bin_W_N":
+            #compute averaged error over the sub_classses
+            pred_ave = torch.stack([item.sum(1) for item in s[0].split(args.expand_output, dim = 1)], 1)/args.expand_output
+            targets_red = torch.stack([item.sum(1) for item in targets.split(args.expand_output, dim = 1)], 1)/args.expand_output
+            ave_falsePred += (torch.argmax(targets_red, dim = 1) != torch.argmax(pred_ave, dim = 1)).int().sum(dim=0)
+    
+            #compute error computed on the first neuron of each sub class
+            pred_single = torch.stack([item[:,0] for item in s[0].split(args.expand_output, dim = 1)], 1)
+            single_falsePred += (torch.argmax(targets_red, dim = 1) != torch.argmax(pred_single, dim = 1)).int().sum(dim=0)
+            
+    if args.binary_settings == "bin_W":
+        ave_test_error = (ave_falsePred / float(len(test_loader.dataset))) * 100
+        single_test_error = ave_test_error
+        
+    elif args.binary_settings == "bin_W_N":
+        ave_test_error = (ave_falsePred.float() / float(len(test_loader.dataset))) * 100
+        single_test_error = (single_falsePred.float() / float(len(test_loader.dataset))) * 100
+        
+    test_loss = loss_loc/ len(test_loader.dataset)
 
-        test_error = (falsePred / float(len(test_loader.dataset))) * 100
-        test_loss = loss_loc/ len(test_loader.dataset)
-
-    return test_error, test_loss
+    return ave_test_error, single_test_error, test_loss
 
 
 def initDataframe_conv(path, args, net, dataframe_to_init = 'results.csv'):
@@ -241,7 +313,7 @@ def initDataframe_conv(path, args, net, dataframe_to_init = 'results.csv'):
     if os.path.isfile(path + dataframe_to_init):
         dataframe = pd.read_csv(path + dataframe_to_init, sep = ',', index_col = 0)
     else:
-        columns_header = ['Train_Error','Test_Error','Train_Loss','Test_Loss']
+        columns_header = ['Ave_Train_Error','Ave-Test_Error', 'Single_Train_Error','Single-Test_Error','Train_Loss','Test_Loss']
 
         for k in range(len(args.layersList) - 1):
             columns_header.append('Nb_Change_Weights_fc_'+str(k))
@@ -266,7 +338,7 @@ def initDataframe_conv(path, args, net, dataframe_to_init = 'results.csv'):
     return dataframe
 
 
-def updateDataframe_conv(BASE_PATH, args, dataframe, net, train_error_list, test_error_list, train_loss_list, test_loss_list, nb_changes_epoch_fc, nb_changes_epoch_conv):
+def updateDataframe_conv(BASE_PATH, args, dataframe, net, ave_train_error, ave_test_error, single_train_error, single_test_error, train_loss, test_loss, nb_changes_epoch_fc, nb_changes_epoch_conv):
     '''
     Add data to the pandas dataframe
     '''
@@ -275,7 +347,7 @@ def updateDataframe_conv(BASE_PATH, args, dataframe, net, train_error_list, test
     else:
         prefix = '/'
         
-    data = [train_error_list[-1], test_error_list[-1], train_loss_list, test_loss_list]
+    data = [ave_train_error[-1], ave_test_error[-1], single_train_error[-1], single_test_error[-1], train_loss[-1], test_loss[-1]]
 
     for k in range(len(args.layersList) - 1):
         N_weights = net.fc[k].weight.numel()
@@ -304,9 +376,9 @@ def updateDataframe_conv(BASE_PATH, args, dataframe, net, train_error_list, test
 
     return dataframe
 
-
-#================= COMMONS ===================================================
-
+#=======================================================================================================
+#=========================================== COMMONS ===================================================
+#=======================================================================================================
 
 def createPath(args):
     '''
@@ -319,7 +391,7 @@ def createPath(args):
         prefix = '/'
         BASE_PATH = '' + os.getcwd()
 
-    BASE_PATH += prefix + 'DATA-0-' + str(args.dataset)
+    BASE_PATH += prefix + 'DATA-0-' + str(args.archi) + "-" + str(args.dataset)
 
     BASE_PATH += prefix + datetime.datetime.now().strftime("%Y-%m-%d")
 
@@ -358,13 +430,23 @@ def saveHyperparameters(args, net, BASE_PATH):
         prefix = '/'
 
     f = open(BASE_PATH + prefix + 'Hyperparameters.txt', 'w')
-    f.write('Binary-Weights Equilibrium Propagation \n')
+    if args.binary_settings == "bin_W":
+        f.write('Binary Weights Equilibrium Propagation \n')
+    elif args.binary_settings == "bin_W_N": 
+        f.write('Binary Weights and Activations Equilibrium Propagation \n')
     f.write('   Parameters of the simulation \n ')
     f.write('\n')
 
     for key in args.__dict__:
-        f.write(key)
-        f.write(': ')
-        f.write('\n')
+        if key.split("_")[0] == "classi" or key.split("_")[0] == "conv" and args.archi != "conv":
+            pass
+        else:
+            if (key == "gradThreshold" or key == "gamma") and args.archi != "fc":
+                pass
+            else:
+                f.write(key)
+                f.write(': ')
+                f.write(str(args.__dict__[key]))
+                f.write('\n')
 
     f.close()
