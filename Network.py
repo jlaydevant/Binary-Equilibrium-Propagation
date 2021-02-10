@@ -75,30 +75,57 @@ class Network_fc_bin_W(nn.Module):
         return s
 
 
-    def forward(self, args, s, seq = None,  beta = 0, target = None):
+    def forward(self, args, s, seq = None,  beta = 0, target = None, optim = 'ep'):
         '''
         Relaxation function
         '''
         T, Kmax = self.T, self.Kmax
-        h, y = [], []
 
-        with torch.no_grad():
-            if beta == 0:
-                # Free phase
-                for t in range(T):
-                        s = self.stepper(args, s)
-            else:
-                # Nudged phase
-                for t in range(Kmax):
-                        s = self.stepper(args, s, target = target, beta = beta)
+        if (optim == 'ep'):
+            with torch.no_grad():
+                if beta == 0:
+                    # Free phase
+                    for t in range(T):
+                            s = self.stepper(args, s)
+                else:
+                    # Nudged phase
+                    for t in range(Kmax):
+                            s = self.stepper(args, s, target = target, beta = beta)
+                        
+        elif (optim == 'bptt'):
+            for t in range(T):
+                if t == T - Kmax - 1:
+                    for i in range(len(s)):
+                        s[i] = s[i].detach()
+                        s[i].requires_grad = True
+
+                s = self.stepper(s)
+
+            return s
 
         return s
 
+    def computeGradientsBPTT(self, s, args):
+        gradW, gradBias = [], []
+
+        for params in self.W:
+            gradW.append(-params.weight.grad)
+            gradBias.append(-params.bias.grad)
+
+        if self.accGradients == []:
+            self.accGradients = [args.gamma[i]*w_list for (i, w_list) in enumerate(gradW)]
+            self.accGradientsnonFiltered = [w_list for w_list in gradW]
+
+        else:
+            self.accGradients = [torch.add((1-args.gamma[i])*x1, args.gamma[i]*x2) for i, (x1, x2) in enumerate(zip(self.accGradients, gradW))]
+            self.accGradientsnonFiltered = [w_list for w_list in gradW]
+
+        gradW = self.accGradients
+
+        return gradW, gradBias
+        
 
     def computeGradients(self, args, s, seq):
-        '''
-        Compute Weights Gradient with EP learning rule + update Momentum
-        '''
         batch_size = s[0].size(0)
         coef = 1/(self.beta*batch_size)
         gradW, gradBias, gradAlpha = [], [], []
@@ -124,13 +151,17 @@ class Network_fc_bin_W(nn.Module):
         return gradW, gradBias, gradAlpha
 
 
-    def updateWeight(self, epoch, s, seq, args):
+    def updateWeight(self, epoch, s, seq, args, optim = 'ep'):
         '''
         Update parameters: weights, biases, scaling factors if relevant
         '''
-        gradW, gradBias, gradAlpha = self.computeGradients(args, s, seq)
+        if (optim == 'ep'):
+            gradW, gradBias, gradAlpha = self.computeGradients(args, s, seq)
+        elif (optim == 'bptt'):
+            gradW, gradBias = self.computeGradientsBPTT(s, args)
 
         nb_changes = []
+        
         with torch.no_grad():
             for i in range(len(s)-1):
                 #update weights
@@ -417,7 +448,7 @@ class Network_conv_bin_W(nn.Module):
                 self.fc[-1].weight.data = weightOffset * torch.sign(self.fc[-1].weight)
 
 
-    def stepper(self, args, s, data, inds, target = None, beta = 0.): 
+    def stepper(self, args, s, data, inds, target = None, beta = 0): 
         
         dsdt = []
         
@@ -472,34 +503,32 @@ class Network_conv_bin_W(nn.Module):
 
 
 
-    def forward(self, s, data, inds,  beta = 0, target = None, optim = 'ep'):
-
+    def forward(self, args, s, data, inds,  beta = 0, target = None, optim = 'ep'):
         T, Kmax = self.T, self.Kmax
         
-        if optim == 'ep':
+        if (optim == 'ep'):
             with torch.no_grad():
                 if beta == 0:
                     # Free phase
                     for t in range(T):
-                        s, inds = self.stepper(s, data, inds)
+                        s, inds = self.stepper(args, s, data, inds)
     
                 else:
                     # Nudged phase
                     for t in range(Kmax):
-                        s, inds = self.stepper(s, data, inds, target = target, beta = beta)
+                        s, inds = self.stepper(args, s, data, inds, target = target, beta = beta)
                         
-        elif optim == 'bptt':
+        elif (optim == 'bptt'):
             with torch.no_grad():
                 for t in range(T-Kmax):
-                    s, inds = self.stepper(s, data, inds)
-            
-                # if t == T - Kmax - 1:
+                    s, inds = self.stepper(args, s, data, inds)
+
             for i in range(len(s)):
                 s[i] = s[i].detach()
                 s[i].requires_grad = True
                 
             for t in range(Kmax):
-                s, inds = self.stepper(s, data, inds)
+                s, inds = self.stepper(args, s, data, inds)
 
         return s, inds
 

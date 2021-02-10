@@ -21,8 +21,16 @@ def train_fc(net, args, train_loader, epoch, optim = 'ep'):
     criterion = nn.MSELoss(reduction = 'sum')
     ave_falsePred, single_falsePred, loss_loc = 0, 0, 0
     nb_changes = [0. for k in range(len(args.layersList)-1)]
+    
+    if (optim == 'bptt'):
+        for i in range(len(net.W)):
+            net.W[i].weight.requires_grad = True
+            net.W[i].bias.requires_grad = True
 
     for batch_idx, (data, targets) in enumerate(tqdm(train_loader)):
+        if (optim == 'bptt'):
+            net.zero_grad()
+        
         if args.random_beta == 1:
             net.beta = torch.sign(torch.randn(1)) * args.beta
             
@@ -35,7 +43,7 @@ def train_fc(net, args, train_loader, epoch, optim = 'ep'):
                 s[i] = s[i].to(net.device)
 
         #free phase
-        s = net.forward(args, s)
+        s = net.forward(args, s, optim = optim)
         seq = s.copy()
 
         #loss
@@ -43,7 +51,10 @@ def train_fc(net, args, train_loader, epoch, optim = 'ep'):
         loss_loc += loss                                   # cumulative loss for the epoch
 
         #nudged phase
-        s = net.forward(args, s, target = targets, beta = net.beta)
+        if (optim == 'ep'):
+            s = net.forward(args, s, target = targets, beta = net.beta, optim = optim)
+        elif (optim == 'bptt'):
+            loss.backward()
 
         #update and track the weights of the network
         nb_changes_loc = net.updateWeight(epoch, s, seq, args)
@@ -173,7 +184,7 @@ def updateDataframe_fc(BASE_PATH, args, dataframe, net, ave_train_error, ave_tes
         data.append(args.gamma[k])
         
     for k in range(len(net.weightOffset_tab)):
-        data.append(net.weightOffset_tab[k].cpu().item())
+        data.append(net.weightOffset_tab[k])
 
     new_data = pd.DataFrame([data],index=[1],columns=dataframe.columns)
 
@@ -192,10 +203,21 @@ def train_conv(net, args, train_loader, epoch, optim = 'ep'):
     falsePred, loss_loc = 0, 0
     nb_changes_fc = [0. for k in range(len(args.layersList)-1)]
     nb_changes_conv = [0. for k in range(len(args.convList)-1)]
+    
+    if (optim == 'bptt'):
+        for i in range(len(net.fc)):
+            net.fc[i].weight.requires_grad = True
+            net.fc[i].bias.requires_grad = True
+        for i in range(len(net.conv)):
+            net.conv[i].weight.requires_grad = True
+            net.conv[i].bias.requires_grad = True
 
     for batch_idx, (data, targets) in enumerate(tqdm(train_loader)):
         if args.random_beta == 1:
             net.beta = torch.sign(torch.randn(1)) * args.beta
+            
+        if (optim == 'bptt'):
+            net.zero_grad()
 
         s, inds = net.initHidden(args, data)
         
@@ -206,7 +228,7 @@ def train_conv(net, args, train_loader, epoch, optim = 'ep'):
                 s[i] = s[i].to(net.device)
 
         #free phase
-        s, inds = net.forward(args, s, data, inds)
+        s, inds = net.forward(args, s, data, inds, optim = optim)
 
         seq = [item.clone() for item in s]
         indseq = [item if item is not None else None for item in inds ]
@@ -216,10 +238,13 @@ def train_conv(net, args, train_loader, epoch, optim = 'ep'):
         loss_loc += loss
 
         #nudged phase
-        s, inds = net.forward(args, s, data, inds, beta = net.beta, target = targets, optim = optim)
+        if (optim == 'ep'):
+            s, inds = net.forward(args, s, data, inds, beta = net.beta, target = targets, optim = optim)
+        elif (optim == 'bptt'):
+            loss.backward()
 
         #update and track the weights of the network
-        nb_changes_fc_loc, nb_changes_conv_loc = net.updateWeight(epoch, s, seq, inds, indseq, args, data, optim)
+        nb_changes_fc_loc, nb_changes_conv_loc = net.updateWeight(epoch, s, seq, inds, indseq, args, data, optim = optim)
 
         nb_changes_fc   = [x1+x2 for (x1, x2) in zip(nb_changes_fc, nb_changes_fc_loc)]
         nb_changes_conv = [x1+x2 for (x1, x2) in zip(nb_changes_conv, nb_changes_conv_loc)]
