@@ -1,7 +1,17 @@
 # Training Dynamical Binary Neural Networks with Equilibrium Propagation
 This repository contains the code to reproduce the results of the paper "Training Dynamical Binary Neural Network with Equilibrium Propagation".
 
-Here are listed description of the code uploaded and the commands to be run to reproduce the results shown in the paper. Depending on the commands used in the parser we can train networks with binary weights and which have a full-precision or binary activation. 
+The project contains the following files:
+
++ `main.py`: executes the code, with arguments specified in a parser.
+
++ `Network.py`: contains the network classes.
+
++ `Tools.py`: contains the functions to run on the networks as well as some useful functions for data analysis.
+
++ `Plotfunction.py`: contains the functions to plot the results from the results files. 
+
+
 
 ## I - Package requirements
 
