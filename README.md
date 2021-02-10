@@ -17,10 +17,21 @@ The project contains the following files:
 ## I - Package requirements
 
 Our code is compatible with Python 3.6 and 3.7.
+A suitable environment to run the code can be created in two different ways:
 
-The package requirements are listed in the file 'requirements.txt'.
-
-+ add commands for virtual env.
++ with Anaconda:
+	```
+	conda create --name myenv python=3.6
+	conda activate myenv
+	conda install -c conda-forge matplotlib
+	conda install pytorch torchvision -c pytorch
+	```
++ With virtualenv, using the requirements.txt provided in the repo:
+	```
+	virtualenv myenv
+	source myenv/bin/activate
+	pip install -r requirements.txt
+	```
 
 ## II - Files
 
