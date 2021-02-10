@@ -156,7 +156,7 @@ Each file contains the same functions but adapted for each architecture.
     python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W --layersList 784 4096 10 --activationFun hardsigm --T 50 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 1e-5 1e-4 --gradThreshold 5e-7 5e-7 --lrBias 0.025 0.05 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0
     ```
     
-   + 1 hidden layer with 4096 neurons, fixed scaling factors (BPTT):
+  + 1 hidden layer with 4096 neurons, fixed scaling factors (BPTT):
 
     ```
     python main.py --device 0 --dataset mnist --optim bptt --archi fc --binary_settings bin_W --layersList 784 4096 10 --activationFun hardsigm --T 50 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 1e-5 1e-4 --gradThreshold 5e-7 5e-7 --lrBias 0.025 0.05 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0
@@ -174,7 +174,7 @@ Each file contains the same functions but adapted for each architecture.
     python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W --layersList 784 4096 4096 10 --activationFun hardsigm --T 250 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 5e-6 2e-5 2e-5 --gradThreshold 5e-7 5e-7 5e-7 --lrBias 0.025 0.05 0.1 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0
     ```
     
-   + 2 hidden layers with 4096-4096 neurons, fixed scaling factors (BPTT):
+  + 2 hidden layers with 4096-4096 neurons, fixed scaling factors (BPTT):
     ```
     python main.py --device 0 --dataset mnist --optim bptt --archi fc --binary_settings bin_W --layersList 784 4096 4096 10 --activationFun hardsigm --T 250 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 5e-6 2e-5 2e-5 --gradThreshold 5e-7 5e-7 5e-7 --lrBias 0.025 0.05 0.1 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0
     ```
