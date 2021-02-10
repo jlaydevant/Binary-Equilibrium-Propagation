@@ -103,7 +103,7 @@ The parser accepts the following arguments:
 
 |Arguments|Description|Example|
 |-------|------|------|
-|`learnAlpha`|Boolean that specify if we learn or let fixed the scaling factors|`--learnAlpha`|
+|`learnAlpha`|Boolean that specify if we learn or let fixed the scaling factors|`--learnAlpha 1`|
 |`lrAlpha`|List of learning rates for each scaling factor|`--lrAlpha 1e-5 1e-3 1e-3`|
 |`decayLrAlpha`|Quantity by how much we decay the scaling factors|`--decayLrAlpha 10`|
 |`epochDecayLrAlpha`|Tells when to decay the learning rates for the scaling factors|`--epochDecayLrAlpha 10`|	
