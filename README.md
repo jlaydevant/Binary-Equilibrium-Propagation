@@ -9,7 +9,7 @@ The project contains the following files:
 
 + `Tools.py`: contains the functions to run on the networks as well as some useful functions for data analysis.
 
-+ `Plotfunction.py`: contains the functions to plot the results from the results files. 
++ `plotFunction.py`: contains the functions to plot the results from the results files. 
 
 ![GitHub Logo](/schema-section4.png)<!-- .element height="10%" width="10%" -->
 
