@@ -11,6 +11,7 @@ The project contains the following files:
 
 + `Plotfunction.py`: contains the functions to plot the results from the results files. 
 
+![GitHub Logo](/schema-section4.png)<!-- .element height="20%" width="20%" -->
 
 
 ## I - Package requirements
