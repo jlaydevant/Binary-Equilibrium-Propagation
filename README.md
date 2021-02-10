@@ -211,40 +211,35 @@ python main.py --device 0 --optim ep --archi conv --binary_settings bin_W --laye
 
 * Fully connected architecture:
 
-+ 1 hidden layer with 8192 neurons:
+  + 1 hidden layer with 8192 neurons, fixed scaling factors:
 
-- Fixed scaling factors:
-```
-python main.py --device 0 --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 100 --expand_output 10 --activationFun heaviside --T 20 --Kmax 10 --beta 2 --random_beta 1 --gamma_neur 0.5 --gamma 2e-6 2e-6 --gradThreshold 2.5e-7 2e-7 --dataset mnist --lrBias 1e-7 1e-7 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 0 --rho_threshold 0.5
-```
+    ```
+    python main.py --device 0 --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 100 --expand_output 10 --activationFun heaviside --T 20 --Kmax 10 --beta 2 --random_beta 1 --gamma_neur 0.5 --gamma 2e-6 2e-6 --gradThreshold 2.5e-7 2e-7 --dataset mnist --lrBias 1e-7 1e-7 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 0 --rho_threshold 0.5
+    ```
 
-- Learnt scaling factors:
-```
-python main.py --device 0 --optim ep --archi fc --binary_settings bin_W_N --layersList 784 100 100 --expand_output 10 --activationFun heaviside --T 20 --Kmax 10 --beta 2 --random_beta 1 --gamma_neur 0.5 --gamma 2e-6 2e-6 --gradThreshold 2.5e-7 2e-7 --dataset mnist --lrBias 1e-7 1e-7 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 1 --lrAlpha 1e-6 1e-6 --rho_threshold 0.5
-```
+  + 1 hidden layer with 8192 neurons, learnt scaling factors:
+    ```
+    python main.py --device 0 --optim ep --archi fc --binary_settings bin_W_N --layersList 784 100 100 --expand_output 10 --activationFun heaviside --T 20 --Kmax 10 --beta 2 --random_beta 1 --gamma_neur 0.5 --gamma 2e-6 2e-6 --gradThreshold 2.5e-7 2e-7 --dataset mnist --lrBias 1e-7 1e-7 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 1 --lrAlpha 1e-6 1e-6 --rho_threshold 0.5
+    ```
 
-+ 2 hidden layers with 8192-8192 neurons:
+  + 2 hidden layers with 8192-8192 neurons, fixed scaling factors:
+    ```
+    python main.py --device 0 --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 8192 8000 --expand_output 800 --activationFun heaviside --T 30 --Kmax 160 --beta 2 --random_beta 0 --gamma 1e-6 1e-6 1e-6 --gradThreshold 2e-8 1e-8 5e-8 --dataset mnist --lrBias 1e-6 1e-6 1e-6 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 0 --rho_threshold 0.5
+    ```
 
-- Fixed scaling factors:
-```
-python main.py --device 0 --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 8192 8000 --expand_output 800 --activationFun heaviside --T 30 --Kmax 160 --beta 2 --random_beta 0 --gamma 1e-6 1e-6 1e-6 --gradThreshold 2e-8 1e-8 5e-8 --dataset mnist --lrBias 1e-6 1e-6 1e-6 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 0 --rho_threshold 0.5
-```
-
-- Learnt scaling factors:
-``` 
-python main.py --device 0 --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 8192 8000 --expand_output 800 --activationFun heaviside --T 30 --Kmax 160 --beta 2 --random_beta 0 --gamma 1e-6 1e-6 1e-6 --gradThreshold 2e-8 1e-8 5e-8 --dataset mnist --lrBias 1e-6 1e-6 1e-6 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 1  --lrAlpha 1e-8 1e-8 1e-8 --rho_threshold 0.5
-```
+  + 2 hidden layers with 8192-8192 neurons, learnt scaling factors:
+    ``` 
+    python main.py --device 0 --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 8192 8000 --expand_output 800 --activationFun heaviside --T 30 --Kmax 160 --beta 2 --random_beta 0 --gamma 1e-6 1e-6 1e-6 --gradThreshold 2e-8 1e-8 5e-8 --dataset mnist --lrBias 1e-6 1e-6 1e-6 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 1  --lrAlpha 1e-8 1e-8 1e-8 --rho_threshold 0.5
+    ```
 
 * Convolutional architecture:
 
-+ 1-32-64-10(fc) architecture with MNIST:
-
- - Fixed scaling factors:
-```
-python main.py --device 0 --optim ep --archi conv --binary_settings bin_W_N --layersList 700 -convList 512 256 1  --expand_output 70 --padding 1 --kernelSize 5 --Fpool 3 --activationFun heaviside --T 100 --Kmax 50 --beta 1 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 8e-8 --conv_threshold 8e-8 2e-7 --dataset mnist --lrBias 2e-6 5e-6 1e-5 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0 --rho_threshold 0.5
-```
-- Learnt scaling factors:
-```
-python main.py --device 0 --optim ep --archi conv --layersList 700 -convList 512 256 1  --expand_output 70 --padding 1 --kernelSize 5 --Fpool 3 --activationFun heaviside --T 100 --Kmax 50 --beta 1 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 8e-8--conv_threshold 8e-8 2e-7 --dataset mnist --lrBias 2e-6 5e-6 1e-5 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-5 1e-3 1e-3 --rho_threshold 0.5
-```
+  + 1-32-64-10(fc) architecture with MNIST, fixed scaling factors:
+    ```
+    python main.py --device 0 --optim ep --archi conv --binary_settings bin_W_N --layersList 700 -convList 512 256 1  --expand_output 70 --padding 1 --kernelSize 5 --Fpool 3 --activationFun heaviside --T 100 --Kmax 50 --beta 1 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 8e-8 --conv_threshold 8e-8 2e-7 --dataset mnist --lrBias 2e-6 5e-6 1e-5 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0 --rho_threshold 0.5
+    ```
+  + 1-32-64-10(fc) architecture with MNIST, learnt scaling factors:
+    ```
+    python main.py --device 0 --optim ep --archi conv --layersList 700 -convList 512 256 1  --expand_output 70 --padding 1 --kernelSize 5 --Fpool 3 --activationFun heaviside --T 100 --Kmax 50 --beta 1 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 8e-8--conv_threshold 8e-8 2e-7 --dataset mnist --lrBias 2e-6 5e-6 1e-5 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-5 1e-3 1e-3 --rho_threshold 0.5
+    ```
 
