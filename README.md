@@ -60,53 +60,53 @@ The parser accepts the following arguments:
 
 |Arguments|Description|Example|
 |-------|------|------|
-|`archi`|Type of architecure we want to train: fc or conv| TBD|
-|`layersList`|List of fully connected layers in the network (classifier layer for a conv architecture)| TBD|
-|`convList`|List of the conv layers with the numbers of channels specified - the number of channels of the input has to be specified| TBD|
-|`padding`|TBD| TBD|
-|`kernelSize`|Size of the kernel used for the convolutions| TBD|
-|`Fpool`|Size of the pooling kernel| TBD|
+|`archi`|Type of architecure we want to train: fc or conv| `--archi fc`|
+|`layersList`|List of fully connected layers in the network (classifier layer for a conv architecture)| `--layerList 784 8192 100`|
+|`convList`|List of the conv layers with the numbers of channels specified - the number of channels of the input has to be specified| `--convList 512 256 1`|
+|`padding`|Padding applied for all the convolutions|`--padding 0`|
+|`kernelSize`|Size of the kernel used for all the convolutions| `--kernelSize 5`|
+|`Fpool`|Size of the pooling kernel| `--Fpool 2`|
 
 + EqProp settings:
 
 |Arguments|Description|Example|
 |-------|------|------|
-|`activationFun`|Activation function used in the network| TBD|
-|`T`|Number of time steps for the free phase| TBD|
-|`Kmax`|Number of time steps for the nudge phase| TBD|
-|`beta`|Nudging parameter| TBD|
+|`activationFun`|Activation function used in the network| `--activationFun heaviside`|
+|`T`|Number of time steps for the free phase| `--T 50`|
+|`Kmax`|Number of time steps for the nudge phase| `--Kmax 10`|
+|`beta`|Nudging parameter| `--beta 0.5`|
 		
 + Binary optimization settings:	
 
 |Arguments|Description|Example|
 |-------|------|------|
-|`gamma`|Low pass filter parameter for the fc architecture| TBD|
-|`gamma_classi`|Low pass filter parameter for the classifier of the conv architecture| TBD|
-|`gamma_conv`|Low pass filter parameter for the conv part of the conv architecture| TBD|
-|`gradThreshold`|List of thresholds used in each layer for the fc architecture| TBD|	
-|`classi_threshold`|List of thresholds used for the classifier of the conv architecture| TBD|
-|`conv_threshold`|List of thresholds used for the conv part of the conv architecture| TBD|
+|`gamma`|List of low pass filter parameters for the fc architecture| `--gamma 1e-6 1e-6 1e-6`|
+|`gamma_classi`|Low pass filter parameter for the classifier of the conv architecture| `--classi_gamma 5e-8`|
+|`gamma_conv`|List of low pass filter parameter for the conv part of the conv architecture| `--conv_gamma 5e-8 5e-8`|
+|`gradThreshold`|List of thresholds used in each layer for the fc architecture| `--gradThreshold 2e-8 1e-8 5e-8`|	
+|`classi_threshold`|List of thresholds used for the classifier of the conv architecture| `--classi_threshold 8e-8`|
+|`conv_threshold`|List of thresholds used for the conv part of the conv architecture| `--conv_threshold 8e-8 2e-7`|
 	
 	
 + Training settings:
 
 |Arguments|Description|Example|
 |-------|------|------|
-|`dataset`|Selects which dataset to select to train the network on|TBD|
-|`lrBias`|List of the learning for the biases|TBD|
-|`batchSize`|Size of training mini-batches|TBD|
-|`test_batchSize`|Size of testing mini-batches|TBD|
-|`epochs`|Number of epochs to train the network|TBD|
+|`dataset`|Selects which dataset to select to train the network on|`--dataset cifar10`|
+|`lrBias`|List of the learning for the biases|`--lrBias 1e-7 1e-7`|
+|`batchSize`|Size of training mini-batches|`--batchSize 128`|
+|`test_batchSize`|Size of testing mini-batches|`--test_batchSize 128`|
+|`epochs`|Number of epochs to train the network|`--epochs 30`|
 
 + Scaling factors learning settings: 
 
 
 |Arguments|Description|Example|
 |-------|------|------|
-|`learnAlpha`|Boolean that specify if we learn or let fixed the scaling factors|TBD|
-|`lrAlpha`|Learning rates for each scaling factor|TBD|
-|`decayLrAlpha`|Quantity by how much we decay the scaling factors|TBD|
-|`epochDecayLrAlpha`|Tells when to decay the learning rates for the scaling factors|TBD|	
+|`learnAlpha`|Boolean that specify if we learn or let fixed the scaling factors|`--learnAlpha`|
+|`lrAlpha`|List of learning rates for each scaling factor|`--lrAlpha 1e-5 1e-3 1e-3`|
+|`decayLrAlpha`|Quantity by how much we decay the scaling factors|`--decayLrAlpha 10`|
+|`epochDecayLrAlpha`|Tells when to decay the learning rates for the scaling factors|`--epochDecayLrAlpha 10`|	
 
 	
 	
@@ -150,76 +150,52 @@ Each file contains the same functions but adapted for each architecture.
 
 * Fully connected architecture:
 
-  + 1 hidden layer with 4096 neurons, fixed scaling factors (EP):
+  + 1 hidden layer with 4096 neurons, fixed scaling factors:
 
     ```
-    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W --layersList 784 4096 10 --activationFun hardsigm --T 50 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 1e-5 1e-4 --gradThreshold 5e-7 5e-7 --lrBias 0.025 0.05 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0
-    ```
-    
-  + 1 hidden layer with 4096 neurons, fixed scaling factors (BPTT):
-
-    ```
-    python main.py --device 0 --dataset mnist --optim bptt --archi fc --binary_settings bin_W --layersList 784 4096 10 --activationFun hardsigm --T 50 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 1e-5 1e-4 --gradThreshold 5e-7 5e-7 --lrBias 0.025 0.05 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0
+    python main.py --device 0 --optim ep --archi fc --binary_settings bin_W --layersList 784 4096 10 --activationFun hardsigm --T 50 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 1e-5 1e-4 --gradThreshold 5e-7 5e-7 --dataset mnist --lrBias 0.025 0.05 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0
     ```
 
+  + 1 hidden layer with 4096 neurons, learnt scaling factors:
 
-  + 1 hidden layer with 4096 neurons, learnt scaling factors (EP):
-
     ```
-    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W --layersList 784 100 10 --activationFun hardsigm --T 50 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 1e-5 1e-4 --gradThreshold 5e-7 5e-7 --lrBias 0.025 0.05 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-4 1e-4
-    ```
-
-  + 2 hidden layers with 4096-4096 neurons, fixed scaling factors (EP):
-    ```
-    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W --layersList 784 4096 4096 10 --activationFun hardsigm --T 250 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 5e-6 2e-5 2e-5 --gradThreshold 5e-7 5e-7 5e-7 --lrBias 0.025 0.05 0.1 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0
-    ```
-    
-  + 2 hidden layers with 4096-4096 neurons, fixed scaling factors (BPTT):
-    ```
-    python main.py --device 0 --dataset mnist --optim bptt --archi fc --binary_settings bin_W --layersList 784 4096 4096 10 --activationFun hardsigm --T 250 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 5e-6 2e-5 2e-5 --gradThreshold 5e-7 5e-7 5e-7 --lrBias 0.025 0.05 0.1 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0
+    python main.py --device 0 --optim ep --archi fc --binary_settings bin_W --layersList 784 100 10 --activationFun hardsigm --T 50 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 1e-5 1e-4 --gradThreshold 5e-7 5e-7 --dataset mnist --lrBias 0.025 0.05 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-4 1e-4
     ```
 
-  + 2 hidden layers with 4096-4096 neurons, learnt scaling factors (EP):
+  + 2 hidden layers with 4096-4096 neurons, fixed scaling factors:
     ```
-    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W --layersList 784 4096 4096 10 --activationFun hardsigm --T 250 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 5e-6 2e-5 2e-5 --gradThreshold 5e-7 5e-7 5e-7 --lrBias 0.025 0.05 0.1 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-2 1e-2 1e-2
+    python main.py --device 0 --optim ep --archi fc --binary_settings bin_W --layersList 784 4096 4096 10 --activationFun hardsigm --T 250 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 5e-6 2e-5 2e-5 --gradThreshold 5e-7 5e-7 5e-7 --dataset mnist --lrBias 0.025 0.05 0.1 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0
+    ```
+
+  + 2 hidden layers with 4096-4096 neurons, learnt scaling factors:
+    ```
+    python main.py --device 0 --optim ep --archi fc --binary_settings bin_W --layersList 784 4096 4096 10 --activationFun hardsigm --T 250 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 5e-6 2e-5 2e-5 --gradThreshold 5e-7 5e-7 5e-7 --dataset mnist --lrBias 0.025 0.05 0.1 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-2 1e-2 1e-2
     ```
 
 * Convolutional architecture:
 
-  + 1-32-64-10(fc) architecture with MNIST, fixed scaling factors (EP):
+  + 1-32-64-10(fc) architecture with MNIST, fixed scaling factors:
 
     ```
-    python main.py --device 0 --dataset mnist --optim ep --archi conv --binary_settings bin_W --layersList 10 --convList 64 32 1 --padding 2 --kernelSize 5 --Fpool 2 --activationFun hardsigm --T 150 --Kmax 10 --beta 0.3 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 1e-8 --conv_threshold 1e-8 1e-8 --lrBias 0.025 0.05 0.1 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0
-    ```
-    
-  + 1-32-64-10(fc) architecture with MNIST, fixed scaling factors (BPTT):
-
-    ```
-    python main.py --device 0 --dataset mnist --optim bptt --archi conv --binary_settings bin_W --layersList 10 --convList 64 32 1 --padding 2 --kernelSize 5 --Fpool 2 --activationFun hardsigm --T 150 --Kmax 10 --beta 0.3 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 1e-8 --conv_threshold 1e-8 1e-8 --lrBias 0.025 0.05 0.1 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0
+    python main.py --device 0 --optim ep --archi conv --binary_settings bin_W --layersList 10 --convList 64 32 1 --padding 2 --kernelSize 5 --Fpool 2 --activationFun hardsigm --T 150 --Kmax 10 --beta 0.3 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 1e-8 --conv_threshold 1e-8 1e-8 --dataset mnist --lrBias 0.025 0.05 0.1 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0
     ```
 
-  + 1-32-64-10(fc) architecture with MNIST, learnt scaling factors (EP):
+  + 1-32-64-10(fc) architecture with MNIST, learnt scaling factors:
 
     ```
-    python main.py --device 0 --dataset mnist --optim ep --archi conv --binary_settings bin_W --layersList 10 --convList 64 32 1 --padding 2 --kernelSize 5 --Fpool 2 --activationFun hardsigm --T 150 --Kmax 10 --beta 0.3 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 1e-8 --conv_threshold 1e-8 1e-8 --lrBias 0.025 0.05 0.1 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-3 1e-3 1e-3
+    python main.py --device 0 --optim ep --archi conv --binary_settings bin_W --layersList 10 --convList 64 32 1 --padding 2 --kernelSize 5 --Fpool 2 --activationFun hardsigm --T 150 --Kmax 10 --beta 0.3 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 1e-8 --conv_threshold 1e-8 1e-8 --dataset mnist --lrBias 0.025 0.05 0.1 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-3 1e-3 1e-3
     ```
 
-  + 3-64-128-256-256-10(fc) architecture with CIFAR-10, fixed scaling factors (EP):
+  + 3-64-128-256-256-10(fc) architecture with CIFAR-10, fixed scaling factors:
 
     ```
-    python main.py --device 0 --dataset cifar10 --optim ep --archi conv --binary_settings bin_W --layersList 10 --convList 256 256 128 64 3 --padding 2 --kernelSize 5 --Fpool 2 --activationFun hardsigm --T 150 --Kmax 10 --beta 0.3 --random_beta 1 --classi_gamma 2e-7 --conv_gamma 2e-7 2e-7 2e-7 2e-7 --classi_threshold 1e-8 --conv_threshold 1e-8 1e-8 1e-8 1e-8 --lrBias 0.025 0.05 0.1 0.2 0.4 --batchSize 64 --test_batchSize 512 --epochs 500  --learnAlpha 0
-    ```
-    
-  + 3-64-128-256-256-10(fc) architecture with CIFAR-10, fixed scaling factors (BPTT):
-
-    ```
-    python main.py --device 0 --dataset cifar10 --optim bptt --archi conv --binary_settings bin_W --layersList 10 --convList 256 256 128 64 3 --padding 2 --kernelSize 5 --Fpool 2 --activationFun hardsigm --T 150 --Kmax 10 --beta 0.3 --random_beta 1 --classi_gamma 2e-7 --conv_gamma 2e-7 2e-7 2e-7 2e-7 --classi_threshold 1e-8 --conv_threshold 1e-8 1e-8 1e-8 1e-8 --lrBias 0.025 0.05 0.1 0.2 0.4 --batchSize 64 --test_batchSize 512 --epochs 500  --learnAlpha 0
+    python main.py --device 0 --optim ep --archi conv --binary_settings bin_W --layersList 10 --convList 256 256 128 64 3 --padding 2 --kernelSize 5 --Fpool 2 --activationFun hardsigm --T 150 --Kmax 10 --beta 0.3 --random_beta 1 --classi_gamma 2e-7 --conv_gamma 2e-7 2e-7 2e-7 2e-7 --classi_threshold 1e-8 --conv_threshold 1e-8 1e-8 1e-8 1e-8 --dataset cifar10 --lrBias 0.025 0.05 0.1 0.2 0.4 --batchSize 64 --test_batchSize 512 --epochs 500  --learnAlpha 0
     ```
 
-  + 3-64-128-256-256-10(fc) architecture with CIFAR-10, learnt scaling factors (EP):
+  + 3-64-128-256-256-10(fc) architecture with CIFAR-10, learnt scaling factors:
 
     ```
-    python main.py --device 0 --dataset cifar10 --optim ep --archi conv --binary_settings bin_W --layersList 10 --convList 256 256 128 64 3 --padding 2 --kernelSize 5 --Fpool 2 --activationFun hardsigm --T 150 --Kmax 10 --beta 0.3 --random_beta 1 --classi_gamma 2e-7 --conv_gamma 2e-7 2e-7 2e-7 2e-7 --classi_threshold 1e-8 --conv_threshold 1e-8 1e-8 1e-8 1e-8 --lrBias 0.025 0.05 0.1 0.2 0.4 --batchSize 64 --test_batchSize 512 --epochs 500 --learnAlpha 1 --learnAlpha 1 --lrAlpha 1e-4 1e-2 1e-2 1e-2 1e-2 --decayLrAlpha 10 --epochDecayLrAlpha 10
+    python main.py --device 0 --optim ep --archi conv --binary_settings bin_W --layersList 10 --convList 256 256 128 64 3 --padding 2 --kernelSize 5 --Fpool 2 --activationFun hardsigm --T 150 --Kmax 10 --beta 0.3 --random_beta 1 --classi_gamma 2e-7 --conv_gamma 2e-7 2e-7 2e-7 2e-7 --classi_threshold 1e-8 --conv_threshold 1e-8 1e-8 1e-8 1e-8 --dataset cifar10 --lrBias 0.025 0.05 0.1 0.2 0.4 --batchSize 64 --test_batchSize 512 --epochs 500 --learnAlpha 1 --learnAlpha 1 --lrAlpha 1e-4 1e-2 1e-2 1e-2 1e-2 --decayLrAlpha 10 --epochDecayLrAlpha 10
     ```
 
 ## Binary Synapses & Binary activations: Commands to be run in the terminal to reproduce the results of the paper (Section 4):
@@ -227,35 +203,35 @@ Each file contains the same functions but adapted for each architecture.
 
 * Fully connected architecture:
 
-  + 1 hidden layer with 8192 neurons, fixed scaling factors (EP):
+  + 1 hidden layer with 8192 neurons, fixed scaling factors:
 
     ```
-    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 100 --expand_output 10 --activationFun heaviside --T 20 --Kmax 10 --beta 2 --random_beta 1 --gamma_neur 0.5 --gamma 2e-6 2e-6 --gradThreshold 2.5e-7 2e-7 --lrBias 1e-7 1e-7 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 0 --rho_threshold 0.5
+    python main.py --device 0 --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 100 --expand_output 10 --activationFun heaviside --T 20 --Kmax 10 --beta 2 --random_beta 1 --gamma_neur 0.5 --gamma 2e-6 2e-6 --gradThreshold 2.5e-7 2e-7 --dataset mnist --lrBias 1e-7 1e-7 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 0 --rho_threshold 0.5
     ```
 
-  + 1 hidden layer with 8192 neurons, learnt scaling factors (EP):
+  + 1 hidden layer with 8192 neurons, learnt scaling factors:
     ```
-    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W_N --layersList 784 100 100 --expand_output 10 --activationFun heaviside --T 20 --Kmax 10 --beta 2 --random_beta 1 --gamma_neur 0.5 --gamma 2e-6 2e-6 --gradThreshold 2.5e-7 2e-7 --lrBias 1e-7 1e-7 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 1 --lrAlpha 1e-6 1e-6 --rho_threshold 0.5
-    ```
-
-  + 2 hidden layers with 8192-8192 neurons, fixed scaling factors (EP):
-    ```
-    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 8192 8000 --expand_output 800 --activationFun heaviside --T 30 --Kmax 160 --beta 2 --random_beta 0 --gamma 1e-6 1e-6 1e-6 --gradThreshold 2e-8 1e-8 5e-8 --lrBias 1e-6 1e-6 1e-6 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 0 --rho_threshold 0.5
+    python main.py --device 0 --optim ep --archi fc --binary_settings bin_W_N --layersList 784 100 100 --expand_output 10 --activationFun heaviside --T 20 --Kmax 10 --beta 2 --random_beta 1 --gamma_neur 0.5 --gamma 2e-6 2e-6 --gradThreshold 2.5e-7 2e-7 --dataset mnist --lrBias 1e-7 1e-7 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 1 --lrAlpha 1e-6 1e-6 --rho_threshold 0.5
     ```
 
-  + 2 hidden layers with 8192-8192 neurons, learnt scaling factors (EP):
+  + 2 hidden layers with 8192-8192 neurons, fixed scaling factors:
+    ```
+    python main.py --device 0 --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 8192 8000 --expand_output 800 --activationFun heaviside --T 30 --Kmax 160 --beta 2 --random_beta 0 --gamma 1e-6 1e-6 1e-6 --gradThreshold 2e-8 1e-8 5e-8 --dataset mnist --lrBias 1e-6 1e-6 1e-6 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 0 --rho_threshold 0.5
+    ```
+
+  + 2 hidden layers with 8192-8192 neurons, learnt scaling factors:
     ``` 
-    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 8192 8000 --expand_output 800 --activationFun heaviside --T 30 --Kmax 160 --beta 2 --random_beta 0 --gamma 1e-6 1e-6 1e-6 --gradThreshold 2e-8 1e-8 5e-8 --lrBias 1e-6 1e-6 1e-6 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 1  --lrAlpha 1e-8 1e-8 1e-8 --rho_threshold 0.5
+    python main.py --device 0 --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 8192 8000 --expand_output 800 --activationFun heaviside --T 30 --Kmax 160 --beta 2 --random_beta 0 --gamma 1e-6 1e-6 1e-6 --gradThreshold 2e-8 1e-8 5e-8 --dataset mnist --lrBias 1e-6 1e-6 1e-6 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 1  --lrAlpha 1e-8 1e-8 1e-8 --rho_threshold 0.5
     ```
 
 * Convolutional architecture:
 
-  + 1-32-64-10(fc) architecture with MNIST, fixed scaling factors (EP):
+  + 1-32-64-10(fc) architecture with MNIST, fixed scaling factors:
     ```
-    python main.py --device 0 --dataset mnist --optim ep --archi conv --binary_settings bin_W_N --layersList 700 -convList 512 256 1  --expand_output 70 --padding 1 --kernelSize 5 --Fpool 3 --activationFun heaviside --T 100 --Kmax 50 --beta 1 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 8e-8 --conv_threshold 8e-8 2e-7 --lrBias 2e-6 5e-6 1e-5 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0 --rho_threshold 0.5
+    python main.py --device 0 --optim ep --archi conv --binary_settings bin_W_N --layersList 700 -convList 512 256 1  --expand_output 70 --padding 1 --kernelSize 5 --Fpool 3 --activationFun heaviside --T 100 --Kmax 50 --beta 1 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 8e-8 --conv_threshold 8e-8 2e-7 --dataset mnist --lrBias 2e-6 5e-6 1e-5 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0 --rho_threshold 0.5
     ```
-  + 1-32-64-10(fc) architecture with MNIST, learnt scaling factors (EP):
+  + 1-32-64-10(fc) architecture with MNIST, learnt scaling factors:
     ```
-    python main.py --device 0 --dataset mnist --optim ep --archi conv --layersList 700 -convList 512 256 1  --expand_output 70 --padding 1 --kernelSize 5 --Fpool 3 --activationFun heaviside --T 100 --Kmax 50 --beta 1 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 8e-8--conv_threshold 8e-8 2e-7 --lrBias 2e-6 5e-6 1e-5 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-5 1e-3 1e-3 --rho_threshold 0.5
+    python main.py --device 0 --optim ep --archi conv --layersList 700 -convList 512 256 1  --expand_output 70 --padding 1 --kernelSize 5 --Fpool 3 --activationFun heaviside --T 100 --Kmax 50 --beta 1 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 8e-8--conv_threshold 8e-8 2e-7 --dataset mnist --lrBias 2e-6 5e-6 1e-5 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-5 1e-3 1e-3 --rho_threshold 0.5
     ```
 
