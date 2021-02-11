@@ -52,7 +52,7 @@ def train_fc(net, args, train_loader, epoch, optim = 'ep'):
 
         #nudged phase
         if (optim == 'ep'):
-            s = net.forward(args, s, target = targets, beta = net.beta, optim = optim)
+            s = net.forward(args, s, target = targets, beta = net.beta, optim = optim, pred = seq[0])
         elif (optim == 'bptt'):
             loss.backward()
 
@@ -231,8 +231,8 @@ def train_conv(net, args, train_loader, epoch, optim = 'ep'):
         #free phase
         s, inds = net.forward(args, s, data, inds, optim = optim)
 
-        seq = [item.clone() for item in s]
-        indseq = [item if item is not None else None for item in inds ]
+        seq = s.copy()
+        indseq = inds.copy()
 
         #loss
         loss = (1/(2*s[0].size(0)))*criterion(s[0], targets)
@@ -240,7 +240,10 @@ def train_conv(net, args, train_loader, epoch, optim = 'ep'):
 
         #nudged phase
         if (optim == 'ep'):
-            s, inds = net.forward(args, s, data, inds, beta = net.beta, target = targets, optim = optim)
+            if (args.binary_settings == 'bin_W'):
+                s, inds = net.forward(args, s, data, inds, beta = net.beta, target = targets, optim = optim)
+            elif (args.binary_settings == 'bin_W_N'):
+                s, inds = net.forward(args, s, data, inds, beta = net.beta, target = targets, optim = optim, pred = seq[0])
         elif (optim == 'bptt'):
             loss.backward()
 
@@ -252,7 +255,7 @@ def train_conv(net, args, train_loader, epoch, optim = 'ep'):
 
         #compute error
         if args.binary_settings == "bin_W":
-            falsePred += (torch.argmax(targets, dim = 1) != torch.argmax(seq[0], dim = 1)).int().sum(dim=0)
+            ave_falsePred += (torch.argmax(targets, dim = 1) != torch.argmax(seq[0], dim = 1)).int().sum(dim=0)
             
         elif args.binary_settings == "bin_W_N":
             #compute averaged error over the sub-classes
@@ -265,7 +268,7 @@ def train_conv(net, args, train_loader, epoch, optim = 'ep'):
             single_falsePred += (torch.argmax(targets_red, dim = 1) != torch.argmax(pred_single, dim = 1)).int().sum(dim=0)
 
     if args.binary_settings == "bin_W":
-        ave_train_error = (falsePred / float(len(train_loader.dataset))) * 100
+        ave_train_error = (ave_falsePred / float(len(train_loader.dataset))) * 100
         single_train_error = ave_train_error
         
     elif args.binary_settings == "bin_W_N":

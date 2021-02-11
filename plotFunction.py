@@ -1,8 +1,3 @@
-'''
-File to plot train_error and test_error over epochs
-@author: Jeremie Laydevant
-'''
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -155,7 +150,7 @@ if __name__ == '__main__':
             store_test_loss.append(test_loss_tab)
         else:
             pass
-            
+
     plot_mean_error(store_ave_train_error, store_ave_test_error, store_single_train_error, store_single_test_error)
     plot_mean_loss(store_train_loss, store_test_loss)
 

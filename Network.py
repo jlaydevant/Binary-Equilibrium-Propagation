@@ -254,7 +254,7 @@ class Network_fc_bin_W_N(nn.Module):
         return bin_states
 
 
-    def stepper(self, args, s, seq = None, target = None, beta = 0):
+    def stepper(self, args, s, seq = None, target = None, beta = 0, pred = None):
         pre_act = s.copy()
         bin_states = self.getBinState(s, args)
 
@@ -262,7 +262,8 @@ class Network_fc_bin_W_N(nn.Module):
         pre_act[0] = self.W[0](bin_states[1])
         pre_act[0] = rhop(s[0] - args.rho_threshold)*pre_act[0]
         if beta != 0:
-            pre_act[0] = pre_act[0] + beta*(target*self.neuronMax-s[0])
+            # pre_act[0] = pre_act[0] + beta*(target*self.neuronMax-s[0])
+            pre_act[0] = pre_act[0] + beta*(target*self.neuronMax-pred)
 
         for layer in range(1, len(s)-1):
             #previous layer contribution: weights + bias
@@ -282,7 +283,7 @@ class Network_fc_bin_W_N(nn.Module):
         return s
 
 
-    def forward(self, args, s, seq = None,  beta = 0, target = None, optim = 'ep'):
+    def forward(self, args, s, seq = None,  beta = 0, target = None, optim = 'ep', pred = None):
         '''
         No support for BPTT yet
         '''
@@ -295,7 +296,7 @@ class Network_fc_bin_W_N(nn.Module):
 
             else:
                 for t in range(Kmax):
-                    s = self.stepper(args,s, target = target, beta = beta, seq = seq)
+                    s = self.stepper(args,s, target = target, beta = beta, seq = seq, pred = pred)
 
         return s
 
@@ -747,7 +748,7 @@ class Network_conv_bin_W_N(nn.Module):
                 weightOffset = round((torch.norm(self.conv[-1].weight[k], p = 1)/self.conv[-1].weight[k].numel()).item(), 4)
                 self.conv[-1].weight[k] = weightOffset * torch.sign(self.conv[-1].weight[k])
                 
-            # torch.nn.init.zeros_(self.conv[-1].bias)
+            torch.nn.init.zeros_(self.conv[-1].bias)
                         
             self.size_conv_tab.append(int((self.size_convpool_tab[i] + 2*P - args.kernelSize)/1 + 1 ))
             
@@ -786,7 +787,7 @@ class Network_conv_bin_W_N(nn.Module):
         return bin_states
 
 
-    def stepper(self, args, data, s, inds, target = None, beta = 0):
+    def stepper(self, args, data, s, inds, target = None, beta = 0, pred = None):
         pre_act = s.copy()
         bin_states = self.getBinState(s, args)
         
@@ -796,7 +797,8 @@ class Network_conv_bin_W_N(nn.Module):
         pre_act[0] = rhop(s[0] - args.rho_threshold)*pre_act[0]
         
         if beta != 0:
-            pre_act[0] = pre_act[0] + beta*(target*self.neuronMax-s[0])
+            # pre_act[0] = pre_act[0] + beta*(target*self.neuronMax-s[0])
+            pre_act[0] = pre_act[0] + beta*(target*self.neuronMax-pred)
         
         #middle classifier layer
         for i in range(1, len(self.layersList) - 1):
@@ -853,7 +855,7 @@ class Network_conv_bin_W_N(nn.Module):
         return s, inds
 
 
-    def forward(self, args, s, data, inds, seq = None, target = None, beta = 0, optim = 'ep'):
+    def forward(self, args, s, data, inds, seq = None, target = None, beta = 0, optim = 'ep', pred = None):
 
         T, Kmax = self.T, self.Kmax
 
@@ -864,7 +866,7 @@ class Network_conv_bin_W_N(nn.Module):
 
             else:
                 for t in range(Kmax):
-                    s, inds = self.stepper(args, data, s, inds, target = target, beta = beta)
+                    s, inds = self.stepper(args, data, s, inds, target = target, beta = beta, pred = pred)
 
         return s, inds
 

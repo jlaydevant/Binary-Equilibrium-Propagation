@@ -14,7 +14,7 @@ from Tools import *
 from Network import *
 
 
-parser = argparse.ArgumentParser(description='Binarized weights version of EqProp')
+parser = argparse.ArgumentParser(description='Binary Equilibrium Propagation')
 #hardware settings
 parser.add_argument(
     '--device',
