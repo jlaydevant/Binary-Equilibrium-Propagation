@@ -234,7 +234,8 @@ Each file contains the same functions but adapted for each architecture.
     ```
 
   + 1 hidden layer with 8192 neurons, learnt scaling factors (EP):
-  ```
+  
+    ```
     python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 100 --expand_output 10 --activationFun heaviside --T 20 --Kmax 10 --beta 2 --random_beta 1 --gamma_neur 0.5 --gamma 2e-6 2e-6 --gradThreshold 2.5e-7 2e-7 --lrBias 1e-7 1e-7 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 1 --lrAlpha 1e-6 1e-6 --rho_threshold 0.5
     ```
 
