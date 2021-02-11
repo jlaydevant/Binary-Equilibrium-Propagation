@@ -99,7 +99,7 @@ class Network_fc_bin_W(nn.Module):
                         s[i] = s[i].detach()
                         s[i].requires_grad = True
 
-                s = self.stepper(s)
+                s = self.stepper(args, s)
 
             return s
 
@@ -107,7 +107,7 @@ class Network_fc_bin_W(nn.Module):
 
     def computeGradientsBPTT(self, s, args):
         gradW, gradBias = [], []
-
+        
         for params in self.W:
             gradW.append(-params.weight.grad)
             gradBias.append(-params.bias.grad)
@@ -175,7 +175,9 @@ class Network_fc_bin_W(nn.Module):
                 
                 #update scaling factors
                 if args.learnAlpha == 1:
+                    print(self.weightOffset_tab[i])
                     self.weightOffset_tab[i] += args.lrAlpha[i] * gradAlpha[i]
+                    print(self.weightOffset_tab[i])
                     self.W[i].weight.data = self.weightOffset_tab[i] * torch.sign(self.W[i].weight)
 
         return nb_changes
@@ -280,7 +282,7 @@ class Network_fc_bin_W_N(nn.Module):
         return s
 
 
-    def forward(self, args, s, seq = None,  beta = 0, target = None):
+    def forward(self, args, s, seq = None,  beta = 0, target = None, optim = 'ep'):
         '''
         No support for BPTT yet
         '''
@@ -324,7 +326,7 @@ class Network_fc_bin_W_N(nn.Module):
         return gradW, gradBias, gradAlpha
         
 
-    def updateWeight(self, epoch, s, seq, args):
+    def updateWeight(self, epoch, s, seq, args, optim = 'ep'):
 
         gradW, gradBias, gradAlpha = self.computeGradients(args, s, seq)
 
@@ -620,7 +622,7 @@ class Network_conv_bin_W(nn.Module):
         return gradfc, gradfc_bias, gradconv, gradconv_bias, gradAlpha_fc, gradAlpha_conv
 
 
-    def updateWeight(self, epoch, s, seq, inds, indseq, args, data, optim):
+    def updateWeight(self, s, seq, inds, indseq, args, data, optim):
         '''
         Update weights with Hebbian learning rule
         '''
@@ -713,9 +715,8 @@ class Network_conv_bin_W_N(nn.Module):
 
         self.class_accGradients = []
         self.conv_accGradients = []
-        
-        self.fc_threshold = args.gradThreshold[:len(args.layersList)]
-        self.conv_threshold = args.gradThreshold[len(args.layersList):]
+        self.fc_threshold = args.classi_threshold
+        self.conv_threshold = args.conv_threshold
 
         self.kernelSize = args.kernelSize
         self.Fpool = args.Fpool
@@ -852,7 +853,7 @@ class Network_conv_bin_W_N(nn.Module):
         return s, inds
 
 
-    def forward(self, args, s, data, inds, seq = None, target = None, beta = 0):
+    def forward(self, args, s, data, inds, seq = None, target = None, beta = 0, optim = 'ep'):
 
         T, Kmax = self.T, self.Kmax
 
@@ -863,7 +864,7 @@ class Network_conv_bin_W_N(nn.Module):
 
             else:
                 for t in range(Kmax):
-                    s, inds = self.stepper(args, data, s, inds, target = target, beta = beta, pred = pred)
+                    s, inds = self.stepper(args, data, s, inds, target = target, beta = beta)
 
         return s, inds
 
@@ -924,8 +925,8 @@ class Network_conv_bin_W_N(nn.Module):
         return gradfc, gradfc_bias, gradconv, gradconv_bias, gradAlpha_fc, gradAlpha_conv
 
 
-    def updateWeight(self, s, seq, inds, indseq, args, data):
-
+    def updateWeight(self, s, seq, inds, indseq, args, data, optim = 'ep'):
+        
         with torch.no_grad():
             gradfc, gradfc_bias, gradconv, gradconv_bias, gradAlpha_fc, gradAlpha_conv = self.computeGradients(args, s, seq, inds, indseq, data)
             nb_changes_fc, nb_changes_conv  = [], []

@@ -57,7 +57,8 @@ def train_fc(net, args, train_loader, epoch, optim = 'ep'):
             loss.backward()
 
         #update and track the weights of the network
-        nb_changes_loc = net.updateWeight(epoch, s, seq, args)
+        nb_changes_loc = net.updateWeight(epoch, s, seq, args, optim = optim)
+        
         for k in range(len(args.layersList)-1):
             nb_changes[k] = nb_changes[k] + nb_changes_loc[k]
 
@@ -200,7 +201,7 @@ def train_conv(net, args, train_loader, epoch, optim = 'ep'):
     
     net.train()
     criterion = nn.MSELoss(reduction = 'sum')
-    falsePred, loss_loc = 0, 0
+    ave_falsePred, single_falsePred, loss_loc = 0, 0, 0
     nb_changes_fc = [0. for k in range(len(args.layersList)-1)]
     nb_changes_conv = [0. for k in range(len(args.convList)-1)]
     
@@ -244,7 +245,7 @@ def train_conv(net, args, train_loader, epoch, optim = 'ep'):
             loss.backward()
 
         #update and track the weights of the network
-        nb_changes_fc_loc, nb_changes_conv_loc = net.updateWeight(epoch, s, seq, inds, indseq, args, data, optim = optim)
+        nb_changes_fc_loc, nb_changes_conv_loc = net.updateWeight(s, seq, inds, indseq, args, data, optim = optim)
 
         nb_changes_fc   = [x1+x2 for (x1, x2) in zip(nb_changes_fc, nb_changes_fc_loc)]
         nb_changes_conv = [x1+x2 for (x1, x2) in zip(nb_changes_conv, nb_changes_conv_loc)]
@@ -276,7 +277,7 @@ def train_conv(net, args, train_loader, epoch, optim = 'ep'):
     return ave_train_error, single_train_error, total_loss, nb_changes_fc, nb_changes_conv
 
 
-def test_bin_conv(net, args, test_loader):
+def test_conv(net, args, test_loader, optim = 'ep'):
 
     net.eval()
     criterion = nn.MSELoss(reduction = 'sum')
@@ -293,25 +294,25 @@ def test_bin_conv(net, args, test_loader):
                     s[i] = s[i].to(net.device)
 
             #free phase
-            s, inds = net.forward(s, data, inds)
+            s, inds = net.forward(args, s, data, inds, optim = optim)
 
             #loss
             loss = (1/(2*s[0].size(0)))*criterion(s[0], targets)
             loss_loc += loss
 
-        #compute error
-        if args.binary_settings == "bin_W":
-            ave_falsePred += (torch.argmax(targets, dim = 1) != torch.argmax(s[0], dim = 1)).int().sum(dim=0)
-            
-        elif args.binary_settings == "bin_W_N":
-            #compute averaged error over the sub_classses
-            pred_ave = torch.stack([item.sum(1) for item in s[0].split(args.expand_output, dim = 1)], 1)/args.expand_output
-            targets_red = torch.stack([item.sum(1) for item in targets.split(args.expand_output, dim = 1)], 1)/args.expand_output
-            ave_falsePred += (torch.argmax(targets_red, dim = 1) != torch.argmax(pred_ave, dim = 1)).int().sum(dim=0)
-    
-            #compute error computed on the first neuron of each sub class
-            pred_single = torch.stack([item[:,0] for item in s[0].split(args.expand_output, dim = 1)], 1)
-            single_falsePred += (torch.argmax(targets_red, dim = 1) != torch.argmax(pred_single, dim = 1)).int().sum(dim=0)
+            #compute error
+            if args.binary_settings == "bin_W":
+                ave_falsePred += (torch.argmax(targets, dim = 1) != torch.argmax(s[0], dim = 1)).int().sum(dim=0)
+                
+            elif args.binary_settings == "bin_W_N":
+                #compute averaged error over the sub_classses
+                pred_ave = torch.stack([item.sum(1) for item in s[0].split(args.expand_output, dim = 1)], 1)/args.expand_output
+                targets_red = torch.stack([item.sum(1) for item in targets.split(args.expand_output, dim = 1)], 1)/args.expand_output
+                ave_falsePred += (torch.argmax(targets_red, dim = 1) != torch.argmax(pred_ave, dim = 1)).int().sum(dim=0)
+        
+                #compute error computed on the first neuron of each sub class
+                pred_single = torch.stack([item[:,0] for item in s[0].split(args.expand_output, dim = 1)], 1)
+                single_falsePred += (torch.argmax(targets_red, dim = 1) != torch.argmax(pred_single, dim = 1)).int().sum(dim=0)
             
     if args.binary_settings == "bin_W":
         ave_test_error = (ave_falsePred / float(len(test_loader.dataset))) * 100
@@ -338,7 +339,7 @@ def initDataframe_conv(path, args, net, dataframe_to_init = 'results.csv'):
     if os.path.isfile(path + dataframe_to_init):
         dataframe = pd.read_csv(path + dataframe_to_init, sep = ',', index_col = 0)
     else:
-        columns_header = ['Ave_Train_Error','Ave-Test_Error', 'Single_Train_Error','Single-Test_Error','Train_Loss','Test_Loss']
+        columns_header = ['Ave_Train_Error','Ave_Test_Error', 'Single_Train_Error','Single_Test_Error','Train_Loss','Test_Loss']
 
         for k in range(len(args.layersList) - 1):
             columns_header.append('Nb_Change_Weights_fc_'+str(k))
@@ -461,17 +462,35 @@ def saveHyperparameters(args, net, BASE_PATH):
         f.write('Binary Weights and Activations Equilibrium Propagation \n')
     f.write('   Parameters of the simulation \n ')
     f.write('\n')
+    
+    fc_keys = ['gradThreshold', 'gamma']
+    conv_keys = ['convList', 'padding', 'kernelSize', 'Fpool', 'classi_threshold', 'conv_threshold', 'classi_gamma', 'conv_gamma']
+    bin_W_N_keys = ['gamma_neur', 'rho_threshold', 'expand_output']
 
     for key in args.__dict__:
-        if key.split("_")[0] == "classi" or key.split("_")[0] == "conv" and args.archi != "conv":
-            pass
-        else:
-            if (key == "gradThreshold" or key == "gamma") and args.archi != "fc":
-                pass
-            else:
-                f.write(key)
-                f.write(': ')
-                f.write(str(args.__dict__[key]))
-                f.write('\n')
+
+        if (key in fc_keys) and (args.archi == 'fc'):
+            f.write(key)
+            f.write(': ')
+            f.write(str(args.__dict__[key]))
+            f.write('\n')
+
+        elif (key in conv_keys) and (args.archi == 'conv'):
+            f.write(key)
+            f.write(': ')
+            f.write(str(args.__dict__[key]))
+            f.write('\n')
+            
+        elif (key in bin_W_N_keys) and (args.binary_settings == 'bin_W_N'):
+            f.write(key)
+            f.write(': ')
+            f.write(str(args.__dict__[key]))
+            f.write('\n')
+            
+        elif (key not in fc_keys) and (key not in conv_keys) and (key not in bin_W_N_keys):
+            f.write(key)
+            f.write(': ')
+            f.write(str(args.__dict__[key]))
+            f.write('\n')
 
     f.close()

@@ -353,7 +353,7 @@ if __name__ == '__main__':
         for epoch in tqdm(range(args.epochs)):
             net.epoch = epoch+1
             ave_train_error, single_train_error, train_loss, nb_changes_epoch_fc, nb_changes_epoch_conv = train_conv(net, args, train_loader, epoch, optim = args.optim)
-            ave_test_error, single_test_error, test_loss = test_conv(net, args, test_loader)
+            ave_test_error, single_test_error, test_loss = test_conv(net, args, test_loader, optim = args.optim)
     
             ave_train_error_list.append(ave_train_error.cpu().item())
             ave_test_error_list.append(ave_test_error.cpu().item())
@@ -364,7 +364,7 @@ if __name__ == '__main__':
             train_loss_list.append(train_loss.cpu().item())
             test_loss_list.append(test_loss.cpu().item())
     
-            DATAFRAME = updateDataframe_conv(BASE_PATH, args, DATAFRAME, net, train_error_list, test_error_list, train_loss_list, test_loss_list, nb_changes_epoch_fc, nb_changes_epoch_conv)
+            DATAFRAME = updateDataframe_conv(BASE_PATH, args, DATAFRAME, net, ave_train_error_list, ave_test_error_list, single_train_error_list, single_test_error_list, train_loss_list, test_loss_list, nb_changes_epoch_fc, nb_changes_epoch_conv)
             # torch.save(net.state_dict(), BASE_PATH + prefix + 'model_state_dict.pt')
             torch.save({
                         'epoch': epoch,
