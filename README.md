@@ -253,9 +253,9 @@ Each file contains the same functions but adapted for each architecture.
 
   + 1-32-64-10(fc) architecture with MNIST, fixed scaling factors (EP):
     ```
-    python main.py --device 0 --dataset mnist --optim ep --archi conv --binary_settings bin_W_N --layersList 700 -convList 512 256 1 --expand_output 70 --padding 1 --kernelSize 5 --Fpool 3 --activationFun heaviside --T 100 --Kmax 50 --beta 1 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 8e-8 --conv_threshold 8e-8 2e-7 --lrBias 2e-6 5e-6 1e-5 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0 --rho_threshold 0.5
+    python main.py --device 0 --dataset mnist --optim ep --archi conv --binary_settings bin_W_N --layersList 700 --convList 512 256 1 --expand_output 70 --padding 1 --kernelSize 5 --Fpool 3 --activationFun heaviside --T 100 --Kmax 50 --beta 1 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 8e-8 --conv_threshold 8e-8 2e-7 --lrBias 2e-6 5e-6 1e-5 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 0 --rho_threshold 0.5
     ```
   + 1-32-64-10(fc) architecture with MNIST, learnt scaling factors (EP):
     ```
-    python main.py --device 0 --dataset mnist --optim ep --archi conv --binary_settings bin_W_N --layersList 700 -convList 512 256 1 --expand_output 70 --padding 1 --kernelSize 5 --Fpool 3 --activationFun heaviside --T 100 --Kmax 50 --beta 1 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 8e-8--conv_threshold 8e-8 2e-7 --lrBias 2e-6 5e-6 1e-5 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-5 1e-3 1e-3 --rho_threshold 0.5
+    python main.py --device 0 --dataset mnist --optim ep --archi conv --binary_settings bin_W_N --layersList 700 --convList 512 256 1 --expand_output 70 --padding 1 --kernelSize 5 --Fpool 3 --activationFun heaviside --T 100 --Kmax 50 --beta 1 --random_beta 1 --classi_gamma 5e-8 --conv_gamma 5e-8 5e-8 --classi_threshold 8e-8--conv_threshold 8e-8 2e-7 --lrBias 2e-6 5e-6 1e-5 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-5 1e-3 1e-3 --rho_threshold 0.5
     ```
