@@ -166,7 +166,7 @@ Each file contains the same functions but adapted for each architecture.
   + 1 hidden layer with 4096 neurons, learnt scaling factors (EP):
 
     ```
-    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W --layersList 784 100 10 --activationFun hardsigm --T 50 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 1e-5 1e-4 --gradThreshold 5e-7 5e-7 --lrBias 0.025 0.05 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-4 1e-4
+    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W --layersList 784 4096 10 --activationFun hardsigm --T 50 --Kmax 10 --beta 0.3 --random_beta 1 --gamma 1e-5 1e-4 --gradThreshold 5e-7 5e-7 --lrBias 0.025 0.05 --batchSize 64 --test_batchSize 512 --epochs 50 --learnAlpha 1 --lrAlpha 1e-4 1e-4
     ```
 
   + 2 hidden layers with 4096-4096 neurons, fixed scaling factors (EP):
