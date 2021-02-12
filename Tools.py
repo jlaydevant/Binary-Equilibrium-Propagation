@@ -52,7 +52,7 @@ def train_fc(net, args, train_loader, epoch, optim = 'ep'):
 
         #nudged phase
         if (optim == 'ep'):
-            s = net.forward(args, s, target = targets, beta = net.beta, optim = optim, pred = seq[0])
+            s = net.forward(args, s, target = targets, beta = net.beta, optim = optim)
         elif (optim == 'bptt'):
             loss.backward()
 

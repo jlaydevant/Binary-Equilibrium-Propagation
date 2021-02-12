@@ -254,7 +254,7 @@ class Network_fc_bin_W_N(nn.Module):
         return bin_states
 
 
-    def stepper(self, args, s, seq = None, target = None, beta = 0, pred = None):
+    def stepper(self, args, s, seq = None, target = None, beta = 0):
         pre_act = s.copy()
         bin_states = self.getBinState(s, args)
 
@@ -262,8 +262,7 @@ class Network_fc_bin_W_N(nn.Module):
         pre_act[0] = self.W[0](bin_states[1])
         pre_act[0] = rhop(s[0] - args.rho_threshold)*pre_act[0]
         if beta != 0:
-            # pre_act[0] = pre_act[0] + beta*(target*self.neuronMax-s[0])
-            pre_act[0] = pre_act[0] + beta*(target*self.neuronMax-pred)
+            pre_act[0] = pre_act[0] + beta*(target*self.neuronMax-s[0])
 
         for layer in range(1, len(s)-1):
             #previous layer contribution: weights + bias
@@ -283,7 +282,7 @@ class Network_fc_bin_W_N(nn.Module):
         return s
 
 
-    def forward(self, args, s, seq = None,  beta = 0, target = None, optim = 'ep', pred = None):
+    def forward(self, args, s, seq = None,  beta = 0, target = None, optim = 'ep'):
         '''
         No support for BPTT yet
         '''
@@ -296,7 +295,7 @@ class Network_fc_bin_W_N(nn.Module):
 
             else:
                 for t in range(Kmax):
-                    s = self.stepper(args,s, target = target, beta = beta, seq = seq, pred = pred)
+                    s = self.stepper(args,s, target = target, beta = beta, seq = seq)
 
         return s
 
