@@ -241,12 +241,12 @@ Each file contains the same functions but adapted for each architecture.
 
   + 2 hidden layers with 8192-8192 neurons, fixed scaling factors (EP):
     ```
-    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 8192 8000 --expand_output 800 --activationFun heaviside --T 30 --Kmax 160 --beta 2 --random_beta 0 --gamma 1e-6 1e-6 1e-6 --gradThreshold 2e-8 1e-8 5e-8 --lrBias 1e-6 1e-6 1e-6 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 0 --rho_threshold 0.5
+    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 8192 6000 --expand_output 600 --activationFun heaviside --T 30 --Kmax 10 --beta 2 --random_beta 0 --gamma 1e-6 1e-6 1e-6 --gradThreshold 2e-8 1e-8 5e-8 --lrBias 1e-6 1e-6 1e-6 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 0 --rho_threshold 0.5
     ```
 
   + 2 hidden layers with 8192-8192 neurons, learnt scaling factors (EP):
     ``` 
-    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 8192 8000 --expand_output 800 --activationFun heaviside --T 30 --Kmax 160 --beta 2 --random_beta 0 --gamma 1e-6 1e-6 1e-6 --gradThreshold 2e-8 1e-8 5e-8 --lrBias 1e-6 1e-6 1e-6 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 1  --lrAlpha 1e-8 1e-8 1e-8 --rho_threshold 0.5
+    python main.py --device 0 --dataset mnist --optim ep --archi fc --binary_settings bin_W_N --layersList 784 8192 8192 6000 --expand_output 600 --activationFun heaviside --T 30 --Kmax 10 --beta 2 --random_beta 0 --gamma 1e-6 1e-6 1e-6 --gradThreshold 2e-8 1e-8 5e-8 --lrBias 1e-6 1e-6 1e-6 --batchSize 64 --test_batchSize 512 --epochs 100 --learnAlpha 1  --lrAlpha 1e-8 1e-8 1e-8 --rho_threshold 0.5
     ```
 
 * Convolutional architecture:
