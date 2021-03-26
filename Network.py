@@ -19,7 +19,7 @@ class Network_fc_bin_W(nn.Module):
         super(Network_fc_bin_W, self).__init__()
         
         if args.device >= 0 and torch.cuda.is_available():
-            self.device = torch.device("cuda:"+str(args.device)+")")
+            self.device = torch.device("cuda:"+str(args.device))
             self.cuda = True
         else:
             self.device = torch.device("cpu")
