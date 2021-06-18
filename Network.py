@@ -741,17 +741,18 @@ class Network_conv_bin_W_N(nn.Module):
         self.size_convpool_tab = [input_size] 
         self.size_conv_tab = [input_size]
 
-        for i in range(self.n_cp):
-            self.conv.append(nn.Conv2d(args.convList[i + 1], args.convList[i], args.kernelSize, padding = P))
-            for k in range(args.convList[i]):
-                weightOffset = round((torch.norm(self.conv[-1].weight[k], p = 1)/self.conv[-1].weight[k].numel()).item(), 4)
-                self.conv[-1].weight[k] = weightOffset * torch.sign(self.conv[-1].weight[k])
-                
-            torch.nn.init.zeros_(self.conv[-1].bias)
-                        
-            self.size_conv_tab.append(int((self.size_convpool_tab[i] + 2*P - args.kernelSize)/1 + 1 ))
-            
-            self.size_convpool_tab.append(int((self.size_conv_tab[-1]-args.Fpool+2*0)/args.Fpool)+1)
+        with torch.no_grad():
+            for i in range(self.n_cp):
+                self.conv.append(nn.Conv2d(args.convList[i + 1], args.convList[i], args.kernelSize, padding = P))
+                for k in range(args.convList[i]):
+                    weightOffset = round((torch.norm(self.conv[-1].weight[k], p = 1)/self.conv[-1].weight[k].numel()).item(), 4)
+                    self.conv[-1].weight[k] = weightOffset * torch.sign(self.conv[-1].weight[k])
+
+                torch.nn.init.zeros_(self.conv[-1].bias)
+
+                self.size_conv_tab.append(int((self.size_convpool_tab[i] + 2*P - args.kernelSize)/1 + 1 ))
+
+                self.size_convpool_tab.append(int((self.size_conv_tab[-1]-args.Fpool+2*0)/args.Fpool)+1)
         
         self.pool = nn.MaxPool2d(args.Fpool, stride = args.Fpool, return_indices = True)	        
         self.unpool = nn.MaxUnpool2d(args.Fpool, stride = args.Fpool)    
@@ -765,13 +766,14 @@ class Network_conv_bin_W_N(nn.Module):
         self.layersList.append(args.convList[0]*self.size_convpool_tab[0]**2)
 
         self.nc = len(self.layersList) - 1
-        
-        for i in range(self.n_classifier):
-            self.fc.append(nn.Linear(self.layersList[i + 1], self.layersList[i]))    
-            weightOffset = round((torch.norm(self.fc[-1].weight, p = 1)/self.fc[-1].weight.numel()).item(), 4)
 
-            self.fc[-1].weight.data = weightOffset * torch.sign(self.fc[-1].weight)
-            torch.nn.init.zeros_(self.fc[-1].bias)
+        with torch.no_grad():
+            for i in range(self.n_classifier):
+                self.fc.append(nn.Linear(self.layersList[i + 1], self.layersList[i]))
+                weightOffset = round((torch.norm(self.fc[-1].weight, p = 1)/self.fc[-1].weight.numel()).item(), 4)
+
+                self.fc[-1].weight.data = weightOffset * torch.sign(self.fc[-1].weight)
+                torch.nn.init.zeros_(self.fc[-1].bias)
 
 
     def getBinState(self, states, args):
