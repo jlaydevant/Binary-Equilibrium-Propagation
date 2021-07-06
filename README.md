@@ -1,5 +1,5 @@
 # Training Dynamical Binary Neural Networks with Equilibrium Propagation
-This repository contains the code to reproduce the results of the paper "Training Dynamical Binary Neural Networks with Equilibrium Propagation".
+This repository contains the code to reproduce the results of the paper [Training Dynamical Binary Neural Networks with Equilibrium Propagation](https://openaccess.thecvf.com/content/CVPR2021W/BiVision/papers/Laydevant_Training_Dynamical_Binary_Neural_Networks_With_Equilibrium_Propagation_CVPRW_2021_paper.pdf).
 
 The project contains the following files:
 
